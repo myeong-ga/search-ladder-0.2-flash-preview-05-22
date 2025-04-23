@@ -1,3 +1,97 @@
+### Google Gemini 기반 검색 챗봇 개발 작업일지 (2024.04.23)
+
+### 검색 기반 AI 모델 비교 프로젝트: 단일 프롬프트로 통합된 검색 경험
+
+최근 출시된 Gemini 2.5 Flash의 새로운 기능들이 실제로 어떤 성능을 보여주는지 직접 테스트해보고 싶었습니다. 특히 검색 기반 AI 응답에서 어떤 차별점을 가져올 수 있는지 궁금했죠. 이론적인 벤치마크보다는 실제 사용 시나리오에서의 성능과 UX가 더 중요하다고 생각합니다.
+
+## 프로젝트 접근 방식
+
+Google과 OpenAI에서 제공하는 각각의 Native Web Search 도구를 활용하여 실험을 진행했습니다. AI SDK의 고수준 API를 통해 **단일 프롬프트로 웹 검색, 그라운딩, 그리고 검색어 추천까지** 모두 구현할 수 있었습니다. 이는 개발자 경험(DX)과 최종 사용자 경험(UX) 모두를 크게 향상시키는 접근법입니다.
+
+```typescript
+// Google의 Native Web Search 활용
+const result = await streamText({
+  model: google("gemini-2.5-flash-preview-04-17", {
+    useSearchGrounding: true,  // 네이티브 웹 검색 활성화
+  }),
+  messages,
+  system: GOOGLE_SEARCH_SUGGESTIONS_PROMPT,
+  temperature: 0.7,
+  maxTokens: 10000,
+  // ...
+});
+```
+
+이러한 통합 접근 방식은 복잡한 백엔드 로직을 숨기고 프론트엔드에서는 깔끔한 사용자 경험을 제공할 수 있게 해줍니다.
+
+## 혁신적인 검색어 추천 메커니즘
+
+이번 구현의 가장 흥미로운 부분은 검색어 추천 방식입니다. 기존의 접근법은 주로 입력 프롬프트를 기반으로 쿼리를 확장하는 방식이었습니다. 그러나 이 프로젝트에서는 **검색 결과로부터** 추천 검색어를 도출합니다.
+
+이 방식의 장점은 사용자가 문제를 해결하는 과정에 더 가까운 추천을 제공한다는 점입니다. 사용자의 초기 질문에서 파생된 것이 아니라, 실제 검색 결과에서 발견된 관련 주제와 개념을 기반으로 하기 때문에 더 실용적인 탐색 경로를 제시합니다.
+
+## OpenAI vs Google Gemini 비교
+
+두 플랫폼 모두 네이티브 웹 검색 도구를 제공하지만, 구현 방식과 결과에는 차이가 있었습니다. OpenAI의 o3, o4-mini 모델은 AI SDK에서 제공하는 웹 검색 도구를 사용했지만, Google Gemini와 동일한 수준의 통합된 경험을 제공하지는 못했습니다.
+
+```typescript
+// OpenAI의 Native Web Search 활용
+const result = await streamText({
+  model: openai.responses("gpt-4o-mini"),
+  messages,
+  tools: {
+    web_search_preview: openai.tools.webSearchPreview({  // 네이티브 웹 검색 도구
+      searchContextSize: "high",
+    }),
+  },
+  toolChoice: { type: "tool", toolName: "web_search_preview" },
+  // ...
+});
+```
+
+하지만 OpenAI의 Responses API를 더 깊이 활용하면 Google Gemini에서 구현한 것과 유사한 수준의 통합된 검색 경험을 제공할 수 있을 것이라 확신합니다. 특히 최신 Reasoning 모델의 기능을 활용한다면 더욱 그렇습니다.
+
+## 기술적 도전과 해결책
+
+프로젝트를 진행하면서 흥미로운 기술적 도전에 직면했습니다. 특히 단일 프롬프트로 여러 기능(웹 검색, 그라운딩, 검색어 추천)을 처리하는 과정에서 `SEARCH_TERMS_JSON` 블록을 적절히 처리하는 것이 중요했습니다.
+
+처음에는 서버 측에서 응답을 버퍼링하여 특수 블록을 제거한 후 클라이언트에 전송하는 방식을 시도했지만, 이로 인해 실시간 응답성이 저하되었습니다. 결국 "스트리밍 후 정제" 패턴을 구현하여 실시간 응답성을 유지하면서도 깔끔한 최종 결과를 제공하는 방식으로 해결했습니다.
+
+```typescript
+// 스트리밍 후 정제 패턴 구현
+onChunk: ({ chunk }) => {
+  // 실시간 스트리밍을 위한 원본 텍스트 전송
+  fullText += chunk.textDelta;
+  dataStream.writeData({ type: "text-delta", text: chunk.textDelta });
+},
+onFinish: () => {
+  // 정제된 텍스트 전송
+  const cleanedText = removeSearchTermsJson(fullText);
+  dataStream.writeData({ type: "cleaned-text", text: cleanedText });
+}
+```
+
+## 다음 단계
+
+이 프로젝트는 시작에 불과합니다. 다음 단계로는:
+
+1. OpenAI Responses API를 더 깊이 활용한 동등한 통합 경험 구현
+2. 다양한 검색 시나리오에서의 그라운딩 품질 비교
+3. 검색 결과 기반 추천 알고리즘의 개선 및 최적화
+4. 실제 사용자 피드백을 통한 UX 개선
+
+
+## 오픈 소스로 공유
+
+이 프로젝트의 모든 코드는 오픈 소스로 공유됩니다. 개발자 커뮤니티에서 이 실험 결과를 활용하고, 더 나은 검색 기반 AI 경험을 구축하는 데 도움이 되길 바랍니다.
+
+단일 프롬프트로 웹 검색, 그라운딩, 검색어 추천까지 모두 처리할 수 있는 가능성은 AI 기반 검색 경험의 미래를 보여줍니다. 기술적 벤치마크보다 실제 사용자 가치를 창출하는 방향으로 이러한 모델을 활용하는 방법을 계속 모색해 나갈 것입니다.
+
+---
+
+코드와 데모는 GitHub에서 확인하실 수 있으며, 여러분의 피드백과 기여를 환영합니다!
+
+
 ### Google Gemini 기반 검색 챗봇 개발 작업일지 (2024.04.18)
 
 안녕하세요! 오늘은 Google Gemini API를 활용한 검색 기반 챗봇의 개발 과정에서 중요한 기술적 개선을 이루었습니다. 특히 실시간 스트리밍 구현 방식을 크게 개선하여 사용자 경험과 개발자 경험 모두를 향상시켰습니다.
