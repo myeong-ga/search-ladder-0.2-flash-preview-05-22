@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { BarChart3, LayoutDashboard, MessageSquare, Search, Settings, HelpCircle } from "lucide-react"
 import {
   Sidebar,
@@ -29,18 +29,20 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-// Internal component to handle sidebar state based on screen size
-function SidebarController() {
-  const { setOpen } = useSidebar()
-  const isLargeScreen = useMediaQuery("(min-width: 1280px)")
+  // Internal component to handle sidebar state based on screen size
+  function SidebarController( ) {
+    const { setOpen } = useSidebar()
+    const isLargeScreen = useMediaQuery("(min-width: 1280px)")
+  
 
-  useEffect(() => {
-    // Collapse sidebar when screen width is 1280px or less
-    setOpen(isLargeScreen)
-  }, [isLargeScreen, setOpen])
+    useEffect(() => {
 
-  return null
-}
+        setOpen(isLargeScreen);
+      
+    }, [isLargeScreen]);
+
+    return null
+  }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
@@ -73,12 +75,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     },
   ]
 
-  const isAskPage = pathname === "/dashboard/ask"
 
   return (
     <SidebarProvider>
-      <SidebarController />
-      <div className="flex h-screen overflow-hidden">
+      <SidebarController/>
+      <div className="flex h-screen w-full overflow-hidden">
         <Sidebar>
           <SidebarHeader className="border-b px-6 py-3">
             <div className="flex items-center gap-2">
@@ -137,7 +138,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </Sidebar>
         <SidebarInset>
           <div className="flex h-full flex-col">
-            {!isAskPage && (
+           
               <header className="flex h-16 items-center gap-4 border-b px-6">
                 <SidebarTrigger />
                 <div>
@@ -146,16 +147,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </h1>
                 </div>
               </header>
-            )}
-            <main className={`flex-1 overflow-auto ${isAskPage ? "p-0" : "p-6"} w-full min-w-0`}>
-              {isAskPage ? (
-                <div className="flex h-16 items-center gap-4 px-6 border-b">
-                  <SidebarTrigger />
-                  <div>
-                    <h1 className="text-xl font-semibold">Ask AI</h1>
-                  </div>
-                </div>
-              ) : null}
+           
+            <main className={`flex-1 overflow-auto p-6 w-full min-w-0`}>
               {children}
             </main>
           </div>

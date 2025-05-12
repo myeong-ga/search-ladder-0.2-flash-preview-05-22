@@ -1,55 +1,64 @@
 import { ChatMessage } from "@/components/chat-message"
 import { SourcesList } from "@/components/sources-list"
 import { SearchSuggestions } from "@/components/search-suggestions"
-import type { Message } from "ai"
-import type { Source } from "@/lib/types"
-import type { SearchSuggestion } from "@/hooks/use-comparison-chat"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { ProviderType } from "@/lib/types"
+
+interface ProviderProps {
+  id: ProviderType
+  name: string
+  chat: any
+  isActive: boolean
+  toggleActive: () => void
+}
 
 interface MobileComparisonViewProps {
-  googleMessages: Message[]
-  openaiMessages: Message[]
-  googleSources: Source[]
-  openaiSources: Source[]
-  googleSearchSuggestions: SearchSuggestion[]
-  searchSuggestionsReasoning?: string
-  searchSuggestionsConfidence?: number | null
-  isGoogleLoading: boolean
-  isOpenAILoading: boolean
+  firstProvider: ProviderProps
+  secondProvider: ProviderProps
   onSearchSuggestionClick: (suggestion: string) => void
 }
 
 export function MobileComparisonView({
-  googleMessages,
-  openaiMessages,
-  googleSources,
-  openaiSources,
-  googleSearchSuggestions,
-  searchSuggestionsReasoning,
-  searchSuggestionsConfidence,
-  isGoogleLoading,
-  isOpenAILoading,
+  firstProvider,
+  secondProvider,
   onSearchSuggestionClick,
 }: MobileComparisonViewProps) {
-  // Get the last message from each model (the response)
-  // const lastGoogleMessage = googleMessages.length > 0 ? googleMessages[googleMessages.length - 1] : null
-  // const lastOpenAIMessage = openaiMessages.length > 0 ? openaiMessages[openaiMessages.length - 1] : null
-
   return (
-    <Tabs defaultValue="google" className="w-full">
+    <Tabs defaultValue="first" className="w-full">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="google">Google Gemini</TabsTrigger>
-        <TabsTrigger value="openai">OpenAI</TabsTrigger>
+        <TabsTrigger value="first" className="flex justify-between items-center">
+          <span>{firstProvider.name}</span>
+          <div className="flex items-center space-x-2 ml-2">
+            <Switch
+              id="first-provider-active-mobile"
+              checked={firstProvider.isActive}
+              onCheckedChange={firstProvider.toggleActive}
+              disabled={firstProvider.chat?.isLoading}
+            />
+          </div>
+        </TabsTrigger>
+        <TabsTrigger value="second" className="flex justify-between items-center">
+          <span>{secondProvider.name}</span>
+          <div className="flex items-center space-x-2 ml-2">
+            <Switch
+              id="second-provider-active-mobile"
+              checked={secondProvider.isActive}
+              onCheckedChange={secondProvider.toggleActive}
+              disabled={secondProvider.chat?.isLoading}
+            />
+          </div>
+        </TabsTrigger>
       </TabsList>
-      <TabsContent value="google" className="mt-2">
-        <div className="space-y-4">
-          {googleMessages.length > 0 ? (
+      <TabsContent value="first" className="mt-2">
+        <div className={`space-y-4 ${!firstProvider.isActive ? "opacity-50" : ""}`}>
+          {firstProvider.chat?.messages?.length > 0 ? (
             <div className="divide-y">
-              {googleMessages.map((message) => (
+              {firstProvider.chat.messages.map((message: any) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
             </div>
-          ) : isGoogleLoading ? (
+          ) : firstProvider.chat?.isLoading ? (
             <div className="animate-pulse space-y-2">
               <div className="h-4 bg-muted rounded w-3/4"></div>
               <div className="h-4 bg-muted rounded w-1/2"></div>
@@ -57,18 +66,26 @@ export function MobileComparisonView({
           ) : (
             <p className="text-muted-foreground">No response yet</p>
           )}
-          {googleSources.length > 0 && <SourcesList sources={googleSources} />}
+          {firstProvider.chat?.sources?.length > 0 && <SourcesList sources={firstProvider.chat.sources} />}
+          {firstProvider.id === "gemini" && firstProvider.chat?.searchSuggestions?.length > 0 && (
+            <SearchSuggestions
+              suggestions={firstProvider.chat.searchSuggestions}
+              reasoning={firstProvider.chat.searchSuggestionsReasoning}
+              confidence={firstProvider.chat.searchSuggestionsConfidence}
+              onSuggestionClick={onSearchSuggestionClick}
+            />
+          )}
         </div>
       </TabsContent>
-      <TabsContent value="openai" className="mt-2">
-        <div className="space-y-4">
-          {openaiMessages.length > 0 ? (
+      <TabsContent value="second" className="mt-2">
+        <div className={`space-y-4 ${!secondProvider.isActive ? "opacity-50" : ""}`}>
+          {secondProvider.chat?.messages?.length > 0 ? (
             <div className="divide-y">
-              {openaiMessages.map((message) => (
+              {secondProvider.chat.messages.map((message: any) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
             </div>
-          ) : isOpenAILoading ? (
+          ) : secondProvider.chat?.isLoading ? (
             <div className="animate-pulse space-y-2">
               <div className="h-4 bg-muted rounded w-3/4"></div>
               <div className="h-4 bg-muted rounded w-1/2"></div>
@@ -76,12 +93,12 @@ export function MobileComparisonView({
           ) : (
             <p className="text-muted-foreground">No response yet</p>
           )}
-          {openaiSources.length > 0 && <SourcesList sources={openaiSources} />}
-          {googleSearchSuggestions.length > 0 && (
+          {secondProvider.chat?.sources?.length > 0 && <SourcesList sources={secondProvider.chat.sources} />}
+          {secondProvider.id === "gemini" && secondProvider.chat?.searchSuggestions?.length > 0 && (
             <SearchSuggestions
-              suggestions={googleSearchSuggestions}
-              reasoning={searchSuggestionsReasoning}
-              confidence={searchSuggestionsConfidence}
+              suggestions={secondProvider.chat.searchSuggestions}
+              reasoning={secondProvider.chat.searchSuggestionsReasoning}
+              confidence={secondProvider.chat.searchSuggestionsConfidence}
               onSuggestionClick={onSearchSuggestionClick}
             />
           )}

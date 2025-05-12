@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import type { SearchSuggestion } from "@/hooks/use-comparison-chat"
+import type { SearchSuggestion } from "@/lib/types"
 
 interface SearchSuggestionsProps {
   suggestions: SearchSuggestion[]
@@ -20,7 +20,7 @@ export function SearchSuggestions({ suggestions, reasoning, confidence, onSugges
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium">Related searches</CardTitle>
-          {confidence !== null && confidence !== undefined &&(
+          {confidence && confidence !== null && (
             <Badge variant="outline" className="text-xs">
               Confidence: {(confidence * 100).toFixed(0)}%
             </Badge>

@@ -2,8 +2,10 @@ import { google } from "@ai-sdk/google"
 import { createDataStreamResponse, streamText } from "ai"
 import type { NextRequest } from "next/server"
 import { GOOGLE_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
+import type { ChatMessage } from "@/lib/types"
 
-// Updated interface to match Google Gemini API structure
+export const runtime = "nodejs"
+
 interface GoogleGroundingMetadata {
   searchEntryPoint?: {
     renderedContent: string
@@ -33,7 +35,6 @@ interface GoogleProviderMetadata {
   }
 }
 
-// Helper function to extract search suggestions from text
 function extractSearchSuggestionsFromText(
   text: string,
 ): { searchTerms: string[]; confidence: number; reasoning: string } | null {
@@ -65,80 +66,126 @@ function extractSearchSuggestionsFromText(
   }
 }
 
-// Function to remove SEARCH_TERMS_JSON blocks from text
 function removeSearchTermsJson(text: string): string {
   const pattern = /```SEARCH_TERMS_JSON\s*({[\s\S]*?})\s*```/g
   return text.replace(pattern, "").trim()
 }
 
-export const runtime = "nodejs"
+function validateMessages(messages: any[]): ChatMessage[] {
+  return messages
+    .filter((message) => {
+      // Validate each message has the required properties
+      const isValid =
+        message &&
+        typeof message === "object" &&
+        (message.role === "user" || message.role === "assistant" || message.role === "system") &&
+        typeof message.content === "string"
+
+      if (!isValid) {
+        console.warn("Invalid message format detected and filtered out:", message)
+      }
+
+      return isValid
+    })
+    .map((message) => ({
+      role: message.role,
+      content: message.content,
+      // Only include id if it exists
+      ...(message.id && { id: message.id }),
+      // Only include name if it exists
+      ...(message.name && { name: message.name }),
+    }))
+}
+
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json()
+    const body = await req.json()
 
-    // Use createDataStreamResponse which is designed for this exact use case
+    // Validate request body
+    if (!body || !Array.isArray(body.messages)) {
+      return new Response(JSON.stringify({ error: "Invalid request body. Expected messages array." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      })
+    }
+
+    // Validate and sanitize messages
+    const validatedMessages = validateMessages(body.messages)
+
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        // Log that we're starting
         console.log("Starting Google stream execution")
 
-        // Buffer to collect the full text
         let fullText = ""
 
-        // Create a stream using the Google Gemini model with search grounding
         const result = await streamText({
           model: google("gemini-2.5-flash-preview-04-17", {
             useSearchGrounding: true,
           }),
-          messages,
-          // Add system prompt with search suggestions instructions
+          messages: validatedMessages,
           system: GOOGLE_SEARCH_SUGGESTIONS_PROMPT,
-          temperature: 0.8,
+          temperature: 0.7,
           maxTokens: 10000,
-          // 1. Text streaming in onChunk handler
           onChunk: ({ chunk }) => {
-            // Stream text chunks in real-time to the client
             if (chunk.type === "text-delta") {
-              // Add to our buffer
               fullText += chunk.textDelta
 
-              // Stream the raw chunk immediately for real-time display
               dataStream.writeData({
                 type: "text-delta",
                 text: chunk.textDelta,
               })
             }
           },
-          // 2. Sources and search suggestions processing in onFinish handler
           onFinish: ({ text, providerMetadata }) => {
             console.log("Google onFinish called")
 
             try {
               const metadata = providerMetadata as unknown as GoogleProviderMetadata
 
-              // Process sources
               if (metadata?.google?.groundingMetadata) {
-                // Extract sources from groundingChunks
-                const sources: { url: string; title: string }[] = []
-                if (metadata.google.groundingMetadata.groundingChunks) {
-                  metadata.google.groundingMetadata.groundingChunks.forEach((chunk) => {
-                    if (chunk.web && chunk.web.uri) {
-                      sources.push({
-                        url: chunk.web.uri,
-                        title: chunk.web.title || new URL(chunk.web.uri).hostname,
-                      })
-                    }
-                  })
-                }
+                const groundingMetadata = metadata.google.groundingMetadata
 
-                // Send the processed sources directly
-                if (sources.length > 0) {
-                  dataStream.writeData({ type: "sources", sources })
+                if (groundingMetadata.groundingChunks) {
+                  const sources = groundingMetadata.groundingChunks
+                    .filter((chunk) => chunk.web && chunk.web.uri)
+                    .map((chunk, index) => ({
+                      url: chunk.web!.uri,
+                      title: chunk.web!.title || new URL(chunk.web!.uri).hostname,
+                      cited_text: "",
+                      index,
+                    }))
+
+                  if (groundingMetadata.groundingSupports) {
+                    for (const support of groundingMetadata.groundingSupports) {
+                      if (support.segment && support.segment.text && support.groundingChunkIndices) {
+                        for (const chunkIndex of support.groundingChunkIndices) {
+                          const sourceIndex = sources.findIndex((s) => s.index === chunkIndex)
+                          if (sourceIndex !== -1) {
+                            const source = sources[sourceIndex]
+                            if (!source.cited_text.includes(support.segment.text)) {
+                              source.cited_text = source.cited_text
+                                ? `${source.cited_text}\n\n${support.segment.text}`
+                                : support.segment.text
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  const cleanedSources = sources.map(({ url, title, cited_text }) => ({
+                    url,
+                    title,
+                    cited_text,
+                  }))
+
+                  if (cleanedSources.length > 0) {
+                    dataStream.writeData({ type: "sources", sources: cleanedSources })
+                  }
                 }
               }
 
-              // Extract search suggestions from the response text
               const searchSuggestions = extractSearchSuggestionsFromText(fullText)
               if (searchSuggestions) {
                 dataStream.writeData({
@@ -149,12 +196,11 @@ export async function POST(req: NextRequest) {
                 })
               }
 
-              // Send the cleaned text as a special message type
               const cleanedText = removeSearchTermsJson(fullText)
               dataStream.writeData({
                 type: "cleaned-text",
                 text: cleanedText,
-                messageId: Date.now().toString(), // Use a timestamp as a simple ID
+                messageId: Date.now().toString(),
               })
             } catch (error) {
               console.error("Error processing metadata in onFinish:", error)
@@ -162,7 +208,6 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        // Merge the text stream into our data stream
         result.mergeIntoDataStream(dataStream)
       },
       onError: (error) => {

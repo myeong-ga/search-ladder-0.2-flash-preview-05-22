@@ -98,7 +98,7 @@ export default function DebugPage() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 w-[80%] mx-auto" >
       <h1 className="text-2xl font-bold mb-4">Debug Grounding Metadata</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
