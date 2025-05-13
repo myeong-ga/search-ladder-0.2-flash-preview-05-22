@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useRef, useState } from "react"
 import { ComparisonView } from "@/components/comparison-view"
 import { MobileComparisonView } from "@/components/mobile-comparison-view"
@@ -11,7 +10,7 @@ import { Send, StopCircle } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useGeminiChat } from "@/hooks/use-gemini-chat"
 import { useOpenAIChat } from "@/hooks/use-openai-chat"
-import type { ProviderType } from "@/lib/types"
+import type { ProviderType, ChatInterface } from "@/lib/types"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 
 interface ComparisonChatProps {
@@ -42,7 +41,7 @@ export function ComparisonChat({ selectedProviders }: ComparisonChatProps) {
   const firstProviderName = getProviderName(firstProvider)
   const secondProviderName = getProviderName(secondProvider)
 
-  const getProviderChat = (providerId: ProviderType) => {
+  const getProviderChat = (providerId: ProviderType): ChatInterface | null => {
     switch (providerId) {
       case "gemini":
         return geminiChat

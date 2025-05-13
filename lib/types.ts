@@ -1,3 +1,5 @@
+import type { CreateMessage } from "@ai-sdk/react"
+
 export type Source = {
   url: string
   title: string
@@ -6,7 +8,7 @@ export type Source = {
 
 export interface Message {
   id: string
-  role: "user" | "assistant"
+  role: "user" | "assistant" | "system" | "data"
   content: string
 }
 
@@ -30,18 +32,28 @@ export interface ChatRequest {
 
 export type ProviderType = "gemini" | "openai" | "anthropic"
 
+export interface ModelInfo {
+  id: string
+  name: string
+  isDefault?: boolean
+}
+
 export interface ProviderInfo {
   id: ProviderType
   name: string
   description: string
   logoSrc: string
   isAvailable: boolean
+  models: ModelInfo[]
 }
 
-export interface ModelInfo {
-  id: string
-  name: string
-  description: string
-  provider: ProviderType
-  isDefault?: boolean
+export interface ChatInterface {
+  messages: Message[]
+  isLoading: boolean
+  stop: () => void
+  sources: Source[]
+  sendMessage: (message: string | CreateMessage) => Promise<void>
+  searchSuggestions?: SearchSuggestion[]
+  searchSuggestionsReasoning?: string
+  searchSuggestionsConfidence?: number | null
 }

@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai"
-import { createDataStreamResponse, streamText } from "ai"
+import { createDataStreamResponse, smoothStream, streamText } from "ai"
 import type { NextRequest } from "next/server"
 import { OPENAI_SYSTEM_PROMPT } from "@/lib/system-prompt"
 import type { ChatMessage } from "@/lib/types"
@@ -44,6 +44,20 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Get the selected model from the request or use default
+    let selectedModel = "gpt-4.1-mini"
+
+    // Check if the request includes a model selection
+    if (body.model && typeof body.model === "string") {
+      selectedModel = body.model
+    } else {
+      // Get the selected model from cookies as fallback
+      const modelCookie = req.cookies.get("selectedOpenAIModel")
+      if (modelCookie) {
+        selectedModel = modelCookie.value
+      }
+    }
+
     // Validate and sanitize messages
     const validatedMessages = validateMessages(body.messages)
 
@@ -51,14 +65,15 @@ export async function POST(req: NextRequest) {
     return createDataStreamResponse({
       execute: async (dataStream) => {
         // Log that we're starting
-        console.log("Starting OpenAI stream execution")
+        console.log("Starting OpenAI stream execution with model:", selectedModel)
 
         // Create a stream using the OpenAI model with web search
-        const result = await streamText({
-          model: openai.responses("gpt-4o-mini"),
+        const result = streamText({
+          model: openai(selectedModel),
           messages: validatedMessages,
           // Add system prompt
           system: OPENAI_SYSTEM_PROMPT,
+          experimental_transform: smoothStream({ chunking: 'line' }),
           temperature: 0.7,
           maxTokens: 10000,
           tools: {
@@ -67,7 +82,7 @@ export async function POST(req: NextRequest) {
             }),
           },
           // Force web search tool
-          toolChoice: { type: "tool", toolName: "web_search_preview" },
+          maxSteps: 10,
           // 1. Text streaming in onChunk handler
           onChunk: ({ chunk }) => {
             // Stream text chunks in real-time to the client

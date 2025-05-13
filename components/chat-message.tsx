@@ -1,11 +1,16 @@
+"use client"
+
 import type React from "react"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import type { Message } from "@/lib/types"
 import { User, Bot } from "lucide-react"
 import ReactMarkdown from "react-markdown"
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism"
+import dynamic from "next/dynamic"
 import remarkGfm from "remark-gfm"
+
+// Dynamically import SyntaxHighlighter with no SSR
+const SyntaxHighlighter = dynamic(() => import("react-syntax-highlighter").then((mod) => mod.Prism), { ssr: false })
 
 interface ChatMessageProps {
   message: Message
@@ -21,6 +26,19 @@ interface CodeComponentProps {
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
+  const [highlighterStyle, setHighlighterStyle] = useState({})
+
+  useEffect(() => {
+    // Dynamically import the style
+    import("react-syntax-highlighter/dist/cjs/styles/prism")
+      .then((mod) => {
+        setHighlighterStyle(mod.atomDark)
+      })
+      .catch((err) => {
+        console.error("Failed to load syntax highlighter style:", err)
+      })
+  }, [])
+
   return (
     <div className={cn("flex gap-3 p-4", message.role === "user" ? "bg-muted/50" : "bg-background")}>
       <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border bg-background shadow">
@@ -54,7 +72,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
                           </div>
                         )}
                         <SyntaxHighlighter
-                          style={atomDark}
+                          style={highlighterStyle}
                           language={match ? match[1] : "text"}
                           PreTag="div"
                           showLineNumbers

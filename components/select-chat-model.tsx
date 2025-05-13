@@ -7,14 +7,23 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { InfoIcon, Loader2 } from "lucide-react"
 import type { ProviderType } from "@/lib/types"
 import { ComparisonChat } from "./comparison-chat"
+import { SingleChat } from "./single-chat"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function SelectChatModel() {
   const { providers, isLoading } = useLlmProvider()
   const [selectedProviders, setSelectedProviders] = useState<ProviderType[]>([])
   const [hasStarted, setHasStarted] = useState(false)
+  const [viewMode, setViewMode] = useState<"comparison" | "single">("comparison")
+  const [singleProvider, setSingleProvider] = useState<ProviderType | null>(null)
 
   const toggleProvider = (providerId: ProviderType) => {
+    if (viewMode === "single") {
+      setSingleProvider(providerId === singleProvider ? null : providerId)
+      return
+    }
+
     setSelectedProviders((prev) => {
       if (prev.includes(providerId)) {
         return prev.filter((id) => id !== providerId)
@@ -29,13 +38,33 @@ export function SelectChatModel() {
   }
 
   const handleStart = () => {
-    if (selectedProviders.length === 2) {
+    if (viewMode === "comparison" && selectedProviders.length === 2) {
+      setHasStarted(true)
+    } else if (viewMode === "single" && singleProvider) {
       setHasStarted(true)
     }
   }
 
+  const handleViewModeChange = (value: string) => {
+    setViewMode(value as "comparison" | "single")
+
+    if (value === "single") {
+      setSingleProvider(selectedProviders.length > 0 ? selectedProviders[0] : null)
+      setSelectedProviders([])
+    } else {
+      if (singleProvider) {
+        setSelectedProviders([singleProvider])
+      }
+      setSingleProvider(null)
+    }
+  }
+
   if (hasStarted) {
-    return <ComparisonChat selectedProviders={selectedProviders} />
+    if (viewMode === "comparison") {
+      return <ComparisonChat selectedProviders={selectedProviders} />
+    } else {
+      return <SingleChat providerId={singleProvider!} />
+    }
   }
 
   if (isLoading) {
@@ -50,13 +79,17 @@ export function SelectChatModel() {
   }
 
   return (
-    <div className="container grid gap-6">
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <div className="col-span-3">
+    <div className="container py-8 max-w-3xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Select AI Models to Compare</CardTitle>
-          <CardDescription>Choose exactly 2 AI providers to compare in a side-by-side chat</CardDescription>
+          <CardTitle className="text-2xl">Select AI Models</CardTitle>
+          <CardDescription>Choose how you want to use the AI search capabilities</CardDescription>
+          <Tabs value={viewMode} onValueChange={handleViewModeChange} className="mt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="comparison">Compare Models</TabsTrigger>
+              <TabsTrigger value="single">Single Model</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -64,7 +97,8 @@ export function SelectChatModel() {
               <Card
                 key={provider.id}
                 className={`cursor-pointer transition-all ${
-                  selectedProviders.includes(provider.id as ProviderType)
+                  (viewMode === "comparison" && selectedProviders.includes(provider.id as ProviderType)) ||
+                  (viewMode === "single" && singleProvider === provider.id)
                     ? "border-primary ring-2 ring-primary ring-opacity-50"
                     : ""
                 } ${!provider.isAvailable ? "opacity-50" : ""}`}
@@ -108,7 +142,8 @@ export function SelectChatModel() {
                   <p className="text-sm text-muted-foreground">{provider.description.split(".")[0]}.</p>
                 </CardContent>
                 <CardFooter className="p-4 pt-0 flex justify-between">
-                  {selectedProviders.includes(provider.id as ProviderType) && (
+                  {((viewMode === "comparison" && selectedProviders.includes(provider.id as ProviderType)) ||
+                    (viewMode === "single" && singleProvider === provider.id)) && (
                     <div className="text-xs font-medium text-primary">Selected</div>
                   )}
                   {!provider.isAvailable && <div className="text-xs text-muted-foreground">Not available</div>}
@@ -118,13 +153,19 @@ export function SelectChatModel() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-end">
-          <Button onClick={handleStart} disabled={selectedProviders.length !== 2} size="lg" className="px-8">
-            Start Comparison
+          <Button
+            onClick={handleStart}
+            disabled={
+              (viewMode === "comparison" && selectedProviders.length !== 2) ||
+              (viewMode === "single" && !singleProvider)
+            }
+            size="lg"
+            className="px-8"
+          >
+            {viewMode === "comparison" ? "Start Comparison" : "Start Chat"}
           </Button>
         </CardFooter>
       </Card>
-    </div>
-    </div>
     </div>
   )
 }

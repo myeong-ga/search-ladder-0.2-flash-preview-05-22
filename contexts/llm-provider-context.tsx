@@ -3,13 +3,14 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { ProviderInfo, ProviderType } from "@/lib/types"
 import { providers as initialProviders } from "@/lib/providers"
+import Cookies from "js-cookie"
 
 interface LlmProviderContextType {
   providers: ProviderInfo[]
   isLoading: boolean
   checkAvailability: () => Promise<void>
   updateSelectedModel: (providerId: ProviderType, modelId: string) => void
-  getSelectedModel: (providerId: ProviderType) => string | undefined
+  getSelectedModel: (providerId: ProviderType) => string
 }
 
 const LlmProviderContext = createContext<LlmProviderContextType | undefined>(undefined)
@@ -17,10 +18,25 @@ const LlmProviderContext = createContext<LlmProviderContextType | undefined>(und
 export function LlmProviderContextProvider({ children }: { children: ReactNode }) {
   const [providers, setProviders] = useState<ProviderInfo[]>(initialProviders)
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedModels, setSelectedModels] = useState<Record<ProviderType, string>>({
-    gemini: "gemini-2.5-flash-preview-04-17",
-    openai: "gpt-4o-mini",
-    anthropic: "claude-3-5-sonnet-20241022",
+  const [selectedModels, setSelectedModels] = useState<Record<ProviderType, string>>(() => {
+    // Initialize with default models
+    const defaults: Record<ProviderType, string> = {
+      gemini: "",
+      openai: "",
+      anthropic: "",
+    }
+
+    // Set default models from providers
+    initialProviders.forEach((provider) => {
+      const defaultModel = provider.models.find((model) => model.isDefault)
+      if (defaultModel) {
+        defaults[provider.id] = defaultModel.id
+      } else if (provider.models.length > 0) {
+        defaults[provider.id] = provider.models[0].id
+      }
+    })
+
+    return defaults
   })
 
   const checkAvailability = async () => {
@@ -49,10 +65,19 @@ export function LlmProviderContextProvider({ children }: { children: ReactNode }
       ...prev,
       [providerId]: modelId,
     }))
+
+    // Save to cookies for server-side access
+    try {
+      // Set cookie with provider-specific name
+      const cookieName = `selected${providerId.charAt(0).toUpperCase() + providerId.slice(1)}Model`
+      Cookies.set(cookieName, modelId, { expires: 30 }) // Expires in 30 days
+    } catch (error) {
+      console.error(`Failed to set cookie for ${providerId} model:`, error)
+    }
   }
 
-  const getSelectedModel = (providerId: ProviderType) => {
-    return selectedModels[providerId]
+  const getSelectedModel = (providerId: ProviderType): string => {
+    return selectedModels[providerId] || ""
   }
 
   useEffect(() => {

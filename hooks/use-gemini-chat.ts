@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
-import type { Source , SearchSuggestion } from "@/lib/types"
+import type { Source } from "@/lib/types"
 import { nanoid } from "@/lib/nanoid"
-
+import type { SearchSuggestion } from "@/lib/types"
+import { useLlmProvider } from "@/contexts/llm-provider-context"
 
 export function useGeminiChat() {
+  const { getSelectedModel } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
   const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
   const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
@@ -18,6 +20,9 @@ export function useGeminiChat() {
     id: "google-search-chat",
     generateId: nanoid,
     experimental_throttle: 50,
+    body: {
+      model: getSelectedModel("gemini"),
+    },
   })
 
   useEffect(() => {
@@ -72,7 +77,11 @@ export function useGeminiChat() {
     const userMessage =
       typeof message === "string" ? ({ role: "user", content: message } as Message | CreateMessage) : message
 
-    await append(userMessage)
+    await append(userMessage, {
+      body: {
+        model: getSelectedModel("gemini"),
+      },
+    })
   }
 
   return {

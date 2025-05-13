@@ -4,7 +4,7 @@ import type { Metadata } from "next"
 import { JetBrains_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LlmProviderContextProvider } from "@/contexts/llm-provider-context"
-
+import { Toaster } from "sonner"
 
 // Use JetBrains Mono as an alternative monospace font
 const jetbrainsMono = JetBrains_Mono({
@@ -27,8 +27,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${jetbrainsMono.variable} font-mono`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <LlmProviderContextProvider>
-          {children}
+        <LlmProviderContextProvider>
+            <div className="min-h-screen flex flex-col">
+              <header className="border-b">
+               
+              </header>
+              <main className="flex-1">{children}</main>
+            </div>
+            <Toaster position="top-right" />
           </LlmProviderContextProvider>
         </ThemeProvider>
       </body>

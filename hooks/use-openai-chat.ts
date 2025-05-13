@@ -5,8 +5,10 @@ import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
 import type { Source } from "@/lib/types"
 import { nanoid } from "@/lib/nanoid"
+import { useLlmProvider } from "@/contexts/llm-provider-context"
 
 export function useOpenAIChat() {
+  const { getSelectedModel } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
 
   const { messages, isLoading, stop, data, append } = useChat({
@@ -14,6 +16,9 @@ export function useOpenAIChat() {
     id: "openai-search-chat",
     generateId: nanoid,
     experimental_throttle: 50,
+    body: {
+      model: getSelectedModel("openai"),
+    },
   })
 
   useEffect(() => {
@@ -35,7 +40,11 @@ export function useOpenAIChat() {
     const userMessage =
       typeof message === "string" ? ({ role: "user", content: message } as Message | CreateMessage) : message
 
-    await append(userMessage)
+    await append(userMessage, {
+      body: {
+        model: getSelectedModel("openai"),
+      },
+    })
   }
 
   return {

@@ -4,8 +4,6 @@ import type { NextRequest } from "next/server"
 import { GOOGLE_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
 import type { ChatMessage } from "@/lib/types"
 
-export const runtime = "nodejs"
-
 interface GoogleGroundingMetadata {
   searchEntryPoint?: {
     renderedContent: string
@@ -97,6 +95,7 @@ function validateMessages(messages: any[]): ChatMessage[] {
     }))
 }
 
+export const runtime = "nodejs"
 
 export async function POST(req: NextRequest) {
   try {
@@ -110,17 +109,31 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Get the selected model from the request or use default
+    let selectedModel = "gemini-2.0-flash"
+
+    // Check if the request includes a model selection
+    if (body.model && typeof body.model === "string") {
+      selectedModel = body.model
+    } else {
+      // Get the selected model from cookies as fallback
+      const modelCookie = req.cookies.get("selectedGeminiModel")
+      if (modelCookie) {
+        selectedModel = modelCookie.value
+      }
+    }
+
     // Validate and sanitize messages
     const validatedMessages = validateMessages(body.messages)
-
+   
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        console.log("Starting Google stream execution")
+        console.log("Starting Google stream execution with model:", selectedModel)
 
         let fullText = ""
 
         const result = await streamText({
-          model: google("gemini-2.5-flash-preview-04-17", {
+          model: google(selectedModel, {
             useSearchGrounding: true,
           }),
           messages: validatedMessages,
