@@ -9,6 +9,7 @@ interface ApiKeyWarningProps {
   missingProviders: {
     google?: boolean
     openai?: boolean
+    anthropic?: boolean
   }
 }
 
@@ -17,8 +18,12 @@ export function ApiKeyWarning({ missingProviders }: ApiKeyWarningProps) {
 
   const isGoogleMissing = missingProviders.google
   const isOpenAIMissing = missingProviders.openai
+  const isAnthropicMissing = missingProviders.anthropic
 
   if (dismissed) return null
+
+  // Count how many providers are missing
+  const missingCount = [isGoogleMissing, isOpenAIMissing, isAnthropicMissing].filter(Boolean).length
 
   return (
     <Alert variant="destructive" className="mb-4">
@@ -26,14 +31,20 @@ export function ApiKeyWarning({ missingProviders }: ApiKeyWarningProps) {
       <AlertTitle>Missing API Keys</AlertTitle>
       <AlertDescription className="flex flex-col gap-2">
         <p>
-          {isGoogleMissing && isOpenAIMissing
-            ? "Both Google and OpenAI API keys are missing."
-            : isGoogleMissing
-              ? "Google API key is missing."
-              : "OpenAI API key is missing."}{" "}
+          {missingCount === 3
+            ? "All API keys (Google, OpenAI, and Anthropic) are missing."
+            : missingCount === 2
+              ? `${isGoogleMissing ? "Google" : ""}${isGoogleMissing && isOpenAIMissing ? " and " : ""}${
+                  isOpenAIMissing ? "OpenAI" : ""
+                }${isGoogleMissing && isAnthropicMissing ? " and " : ""}${
+                  isOpenAIMissing && isAnthropicMissing ? " and " : ""
+                }${isAnthropicMissing ? "Anthropic" : ""} API keys are missing.`
+              : `${isGoogleMissing ? "Google" : ""}${isOpenAIMissing ? "OpenAI" : ""}${
+                  isAnthropicMissing ? "Anthropic" : ""
+                } API key is missing.`}{" "}
           The comparison chatbot requires API keys to function correctly.
         </p>
-        <div className="flex gap-2 mt-2">
+        <div className="flex flex-wrap gap-2 mt-2">
           <Button size="sm" variant="outline" onClick={() => setDismissed(true)}>
             Dismiss
           </Button>
@@ -45,6 +56,11 @@ export function ApiKeyWarning({ missingProviders }: ApiKeyWarningProps) {
           {isOpenAIMissing && (
             <Button size="sm" onClick={() => window.open("https://platform.openai.com/", "_blank")}>
               Get OpenAI API Key
+            </Button>
+          )}
+          {isAnthropicMissing && (
+            <Button size="sm" onClick={() => window.open("https://console.anthropic.com/", "_blank")}>
+              Get Anthropic API Key
             </Button>
           )}
         </div>

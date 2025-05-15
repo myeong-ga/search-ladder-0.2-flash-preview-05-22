@@ -16,8 +16,8 @@ const result = await streamText({
   }),
   messages,
   system: GOOGLE_SEARCH_SUGGESTIONS_PROMPT,
-  temperature: 0.7,
-  maxTokens: 10000,
+  temperature: 0.4,
+  maxTokens: 4000,
   // ...
 });
 ```

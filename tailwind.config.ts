@@ -12,15 +12,17 @@ const config = {
   prefix: "",
   theme: {
     container: {
-      center: true,
-      padding: "2rem",
+      width: "100%",
+      marginRight: "auto",
+      marginLeft: "auto",
       screens: {
         "2xl": "1400px",
       },
     },
     extend: {
       fontFamily: {
-        mono: ["var(--font-mono)", "monospace"],
+        sans: ['var(--font-geist-sans)'],
+        mono: ['var(--font-geist-mono)'],
       },
       colors: {
         border: "hsl(var(--border))",

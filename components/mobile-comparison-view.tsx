@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { ProviderType, ChatInterface } from "@/lib/types"
 import { ModelSelector } from "@/components/model-selector"
+import { LikeButton } from "@/components/like-button"
 
 interface ProviderProps {
   id: ProviderType
@@ -35,7 +36,7 @@ export function MobileComparisonView({
               id="first-provider-active-mobile"
               checked={firstProvider.isActive}
               onCheckedChange={firstProvider.toggleActive}
-              disabled={firstProvider.chat?.isLoading}
+              disabled={firstProvider.chat?.status === "streaming" || firstProvider.chat?.status === "submitted"}
             />
           </div>
         </TabsTrigger>
@@ -46,14 +47,28 @@ export function MobileComparisonView({
               id="second-provider-active-mobile"
               checked={secondProvider.isActive}
               onCheckedChange={secondProvider.toggleActive}
-              disabled={secondProvider.chat?.isLoading}
+              disabled={secondProvider.chat?.status === "streaming" || secondProvider.chat?.status === "submitted"}
             />
           </div>
         </TabsTrigger>
       </TabsList>
       <div className="p-2">
-        <ModelSelector providerId={firstProvider.id} />
-        <ModelSelector providerId={secondProvider.id} />
+        <div className="flex items-center justify-between">
+          <ModelSelector
+            providerId={firstProvider.id}
+            className="flex-1 mr-2"
+          />
+          <ModelSelector
+            providerId={secondProvider.id}
+            className= "flex-1 mr-2"
+          />
+          <div>
+            <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
+          </div>
+          <div>
+            <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
+          </div>
+        </div>
       </div>
       <TabsContent value="first" className="mt-2 h-[calc(100vh-20rem)] overflow-y-auto">
         <div className={`space-y-4 ${!firstProvider.isActive ? "opacity-50" : ""}`}>
@@ -63,7 +78,7 @@ export function MobileComparisonView({
                 <ChatMessage key={message.id} message={message} />
               ))}
             </div>
-          ) : firstProvider.chat?.isLoading ? (
+          ) : firstProvider.chat?.status === "streaming" || firstProvider.chat?.status === "submitted" ? (
             <div className="animate-pulse space-y-2">
               <div className="h-4 bg-muted rounded w-3/4"></div>
               <div className="h-4 bg-muted rounded w-1/2"></div>
@@ -74,7 +89,7 @@ export function MobileComparisonView({
           {firstProvider.chat?.sources && firstProvider.chat.sources.length > 0 && (
             <SourcesList sources={firstProvider.chat.sources} />
           )}
-          {firstProvider.id === "gemini" &&
+          {(firstProvider.id === "gemini" || firstProvider.id === "anthropic") &&
             firstProvider.chat?.searchSuggestions &&
             firstProvider.chat.searchSuggestions.length > 0 && (
               <SearchSuggestions
@@ -94,7 +109,7 @@ export function MobileComparisonView({
                 <ChatMessage key={message.id} message={message} />
               ))}
             </div>
-          ) : secondProvider.chat?.isLoading ? (
+          ) : secondProvider.chat?.status === "streaming" || secondProvider.chat?.status === "submitted" ? (
             <div className="animate-pulse space-y-2">
               <div className="h-4 bg-muted rounded w-3/4"></div>
               <div className="h-4 bg-muted rounded w-1/2"></div>
@@ -105,7 +120,7 @@ export function MobileComparisonView({
           {secondProvider.chat?.sources && secondProvider.chat.sources.length > 0 && (
             <SourcesList sources={secondProvider.chat.sources} />
           )}
-          {secondProvider.id === "gemini" &&
+          {(secondProvider.id === "gemini" || secondProvider.id === "anthropic") &&
             secondProvider.chat?.searchSuggestions &&
             secondProvider.chat.searchSuggestions.length > 0 && (
               <SearchSuggestions

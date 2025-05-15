@@ -15,7 +15,7 @@ export function useGeminiChat() {
   const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
   const [searchSuggestionsConfidence, setSearchSuggestionsConfidence] = useState<number | null>(null)
 
-  const { messages, isLoading, stop, data, append, setMessages } = useChat({
+  const { messages, status, stop, data, append, setMessages } = useChat({
     api: "/api/chat/google",
     id: "google-search-chat",
     generateId: nanoid,
@@ -86,7 +86,7 @@ export function useGeminiChat() {
 
   return {
     messages,
-    isLoading,
+    status,
     stop,
     sources,
     searchSuggestions,

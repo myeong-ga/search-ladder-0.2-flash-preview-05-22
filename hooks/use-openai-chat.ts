@@ -11,7 +11,7 @@ export function useOpenAIChat() {
   const { getSelectedModel } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
 
-  const { messages, isLoading, stop, data, append } = useChat({
+  const { messages, status, stop, data, append } = useChat({
     api: "/api/chat/openai",
     id: "openai-search-chat",
     generateId: nanoid,
@@ -49,7 +49,7 @@ export function useOpenAIChat() {
 
   return {
     messages,
-    isLoading,
+    status,
     stop,
     sources,
     sendMessage,

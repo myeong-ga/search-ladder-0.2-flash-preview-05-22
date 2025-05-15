@@ -111,15 +111,7 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-}
+
 
 /* Code block styling improvements */
 .prose code {
@@ -330,3 +322,70 @@ pre code {
     @apply bg-background text-foreground;
   }
 }
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+}
+
+/* Like button animation */
+@keyframes digit-spin {
+  0% {
+    transform: translateY(0);
+  }
+  20% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-digit-spin {
+  animation: digit-spin 0.5s ease-in-out;
+}
+
+/* ThumbsUp icon animation */
+@keyframes thumbs-up-wiggle {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-15deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(-15deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-thumbs-up {
+  transform-origin: left bottom;
+  animation: thumbs-up-wiggle 0.5s ease-in-out;
+}
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    50% { 
+      backgroundPosition: 0% 0; 
+    }
+    100% {
+      background-position: 0% 0;
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+  }

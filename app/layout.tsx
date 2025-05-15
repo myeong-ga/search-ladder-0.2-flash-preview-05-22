@@ -1,17 +1,14 @@
 import type React from "react"
 import "./globals.css"
 import type { Metadata } from "next"
-import { JetBrains_Mono } from "next/font/google"
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
+
 import { ThemeProvider } from "@/components/theme-provider"
 import { LlmProviderContextProvider } from "@/contexts/llm-provider-context"
 import { Toaster } from "sonner"
 
-// Use JetBrains Mono as an alternative monospace font
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: 'swap'
-})
+
 
 export const metadata: Metadata = {
   title: "AI Search Model Comparison",
@@ -24,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${jetbrainsMono.variable} font-mono`} suppressHydrationWarning>
+    <html lang="en" className={GeistSans.className} suppressHydrationWarning>
+      <body className={GeistSans.className}  suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <LlmProviderContextProvider>
             <div className="min-h-screen flex flex-col">

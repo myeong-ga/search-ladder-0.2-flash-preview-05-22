@@ -3,15 +3,17 @@
 import type React from "react"
 import { useRef, useState } from "react"
 import { ComparisonView } from "@/components/comparison-view"
-import { MobileComparisonView } from "@/components/mobile-comparison-view"
+
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Send, StopCircle } from "lucide-react"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useGeminiChat } from "@/hooks/use-gemini-chat"
 import { useOpenAIChat } from "@/hooks/use-openai-chat"
+import { useAnthropicChat } from "@/hooks/use-anthropic-chat"
 import type { ProviderType, ChatInterface } from "@/lib/types"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
+import { MobileComparisonView } from "./mobile-comparison-view"
 
 interface ComparisonChatProps {
   selectedProviders: ProviderType[]
@@ -25,6 +27,7 @@ export function ComparisonChat({ selectedProviders }: ComparisonChatProps) {
   const { providers } = useLlmProvider()
   const geminiChat = useGeminiChat()
   const openaiChat = useOpenAIChat()
+  const anthropicChat = useAnthropicChat()
 
   const formRef = useRef<HTMLFormElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -48,8 +51,7 @@ export function ComparisonChat({ selectedProviders }: ComparisonChatProps) {
       case "openai":
         return openaiChat
       case "anthropic":
-        // This will be implemented in the next iteration
-        return null
+        return anthropicChat
       default:
         return null
     }
@@ -59,7 +61,10 @@ export function ComparisonChat({ selectedProviders }: ComparisonChatProps) {
   const secondProviderChat = getProviderChat(secondProvider)
 
   const isLoading =
-    (isFirstProviderActive && firstProviderChat?.isLoading) || (isSecondProviderActive && secondProviderChat?.isLoading)
+    (isFirstProviderActive && firstProviderChat?.status === "streaming") ||
+    firstProviderChat?.status === "submitted" ||
+    (isSecondProviderActive && secondProviderChat?.status === "streaming") ||
+    secondProviderChat?.status === "submitted"
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
@@ -96,10 +101,18 @@ export function ComparisonChat({ selectedProviders }: ComparisonChatProps) {
   }
 
   const stopGenerating = () => {
-    if (isFirstProviderActive && firstProviderChat?.isLoading && firstProviderChat?.stop) {
+    if (
+      isFirstProviderActive &&
+      (firstProviderChat?.status === "streaming" || firstProviderChat?.status === "submitted") &&
+      firstProviderChat?.stop
+    ) {
       firstProviderChat.stop()
     }
-    if (isSecondProviderActive && secondProviderChat?.isLoading && secondProviderChat?.stop) {
+    if (
+      isSecondProviderActive &&
+      (secondProviderChat?.status === "streaming" || secondProviderChat?.status === "submitted") &&
+      secondProviderChat?.stop
+    ) {
       secondProviderChat.stop()
     }
   }

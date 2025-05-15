@@ -55,12 +55,13 @@ export async function POST(req: NextRequest) {
         google: {
           thinkingConfig: {
             thinkingBudget: 3000,
+            includeThoughts: true,
           },
         },
       },
-      
-      temperature: 0.2,
-      maxTokens: 10000,
+     
+      temperature: 0.4,
+      maxTokens: 4000,
       onChunk: ({ chunk }) => {
         // Stream text chunks in real-time to the client
         if (chunk.type === "reasoning") {

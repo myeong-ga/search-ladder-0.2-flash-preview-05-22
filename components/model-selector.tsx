@@ -56,7 +56,7 @@ export function ModelSelector({ providerId, className }: ModelSelectorProps) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between", className)}
+          className={cn("w-[100%] justify-between", className)}
           disabled={!provider.isAvailable}
         >
           <span className="truncate">{displayName}</span>

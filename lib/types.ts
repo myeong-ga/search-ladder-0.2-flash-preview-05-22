@@ -25,6 +25,12 @@ export interface ChatMessage {
   name?: string
 }
 
+export interface AnthropicMessage {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
+
 export interface ChatRequest {
   messages: ChatMessage[]
   id?: string
@@ -47,9 +53,11 @@ export interface ProviderInfo {
   models: ModelInfo[]
 }
 
+export type ChatStatus = "submitted" | "streaming" | "ready" | "error"
+
 export interface ChatInterface {
   messages: Message[]
-  isLoading: boolean
+  status: ChatStatus
   stop: () => void
   sources: Source[]
   sendMessage: (message: string | CreateMessage) => Promise<void>

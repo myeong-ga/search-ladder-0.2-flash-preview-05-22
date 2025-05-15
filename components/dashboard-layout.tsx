@@ -24,6 +24,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import ScrollHeader from "./scroll-header"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -54,12 +55,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       href: "/dashboard",
     },
     {
-      title: "Ask AI",
+      title: "LLM Leaderboard",
       icon: MessageSquare,
       href: "/dashboard/ask",
     },
     {
-      title: "Search",
+      title: "Research",
       icon: Search,
       href: "/dashboard/search",
     },
@@ -69,7 +70,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       href: "/dashboard/analytics",
     },
     {
-      title: "Settings",
+      title: "MCP Settings",
       icon: Settings,
       href: "/dashboard/settings",
     },
@@ -86,7 +87,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
                 <span className="text-lg font-bold text-primary-foreground">G</span>
               </div>
-              <span className="text-xl font-semibold">Gemini Chat</span>
+              <Link href="/">
+              <span className="text-xl font-semibold tracking-tight">Gemini Chat</span>
+              </Link>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -138,18 +141,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </Sidebar>
         <SidebarInset>
           <div className="flex h-full flex-col">
-           
-              <header className="flex h-16 items-center gap-4 border-b px-6">
-                <SidebarTrigger />
-                <div>
-                  <h1 className="text-xl font-semibold">
-                    {menuItems.find((item) => item.href === pathname)?.title || "Dashboard"}
-                  </h1>
-                </div>
-              </header>
-           
+            <SidebarHeader className="border-b px-6 py-3">
+              <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center">
+                    <SidebarTrigger />
+                  </div>
+                  <span className="text-xl font-semibold tracking-tight"> {menuItems.find((item) => item.href === pathname)?.title || "Dashboard"}</span>
+              </div>
+            </SidebarHeader>
+
             <main className={`flex-1 overflow-auto p-6 w-full min-w-0`}>
-              {children}
+                {children}
             </main>
           </div>
         </SidebarInset>

@@ -58,32 +58,56 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="col-span-2">
+                   <Card className="col-span-2">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your recent AI interactions and queries</CardDescription>
+              <CardDescription>Your recent resource management queries and insights</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-start gap-4 rounded-lg border p-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">What is the latest news about AI?</p>
+                    <p className="text-sm font-medium leading-none">
+                      What emerging digital trends should our resource allocation strategy consider?
+                    </p>
                     <p className="text-xs text-muted-foreground">2 minutes ago</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 rounded-lg border p-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">How does quantum computing work?</p>
+                    <p className="text-sm font-medium leading-none">
+                      How can we optimize cloud resource distribution for our dynamic workloads?
+                    </p>
                     <p className="text-xs text-muted-foreground">1 hour ago</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 rounded-lg border p-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">What are the best practices for React?</p>
+                    <p className="text-sm font-medium leading-none">
+                      Identify potential resource bottlenecks in our current digital infrastructure
+                    </p>
                     <p className="text-xs text-muted-foreground">3 hours ago</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 rounded-lg border p-3">
+                  <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      Which emerging startups should we monitor for potential partnership opportunities?
+                    </p>
+                    <p className="text-xs text-muted-foreground">5 hours ago</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 rounded-lg border p-3">
+                  <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      Analyze market volatility impact on our current resource allocation strategy
+                    </p>
+                    <p className="text-xs text-muted-foreground">Yesterday</p>
                   </div>
                 </div>
               </div>
@@ -100,13 +124,13 @@ export default function DashboardPage() {
                 <Button asChild className="w-full justify-start" size="lg">
                   <Link href="/dashboard/ask">
                     <MessageSquare className="mr-2 h-5 w-5" />
-                    Ask AI
+                    LLM Leaderboard
                   </Link>
                 </Button>
                 <Button asChild className="w-full justify-start" size="lg" variant="outline">
                   <Link href="/dashboard/search">
                     <Search className="mr-2 h-5 w-5" />
-                    Search
+                    Research
                   </Link>
                 </Button>
                 <Button asChild className="w-full justify-start" size="lg" variant="outline">

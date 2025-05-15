@@ -8,8 +8,8 @@ export const providers: ProviderInfo[] = [
     logoSrc: "/google-g-logo.png",
     isAvailable: false, // Will be determined by the context
     models: [
-      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", isDefault: true },
-      { id: "gemini-2.5-flash-preview-04-17", name: "Gemini 2.5 Flash Preview" },
+      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", isDefault: false },
+      { id: "gemini-2.5-flash-preview-04-17", name: "Gemini 2.5 Flash Preview" , isDefault: true },
       { id: "gemini-2.5-pro-preview-05-06", name: "Gemini 2.5 Pro Preview" },
     ],
   },
@@ -20,10 +20,10 @@ export const providers: ProviderInfo[] = [
     logoSrc: "/openai-logo-inspired-abstract.png",
     isAvailable: false, // Will be determined by the context
     models: [
-      { id: "gpt-4.1-mini", name: "GPT-4.1 Mini", isDefault: true },
+      { id: "gpt-4.1-mini", name: "GPT-4.1 Mini" },
       { id: "o3-mini", name: "O3 Mini" },
       { id: "o4-mini", name: "O4 Mini" },
-      { id: "gpt-4.1", name: "GPT-4.1" },
+      { id: "gpt-4.1", name: "GPT-4.1", isDefault: true },
       { id: "gpt-4o", name: "GPT-4o" },
       { id: "gpt-4o-mini", name: "GPT-4o Mini" },
       // Removed: chatgpt-4o-latest, gpt-4o-search-preview, gpt-4o-mini-search-preview, o1-mini
@@ -34,7 +34,7 @@ export const providers: ProviderInfo[] = [
     name: "Anthropic",
     description: "Creator of Claude, focused on AI safety and helpful, harmless, and honest AI assistants.",
     logoSrc: "/anthropic-logo-abstract.png",
-    isAvailable: false, // Will be implemented in the next iteration
+    isAvailable: false, 
     models: [
       { id: "claude-3-5-sonnet-latest", name: "Claude 3.5 Sonnet", isDefault: true },
       { id: "claude-3-7-sonnet-20250219", name: "Claude 3.7 Sonnet" },

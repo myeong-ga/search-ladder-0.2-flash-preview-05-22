@@ -8,13 +8,13 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 export default function Home() {
   const { providers, isLoading } = useLlmProvider()
 
-  // Check which providers are missing
   const missingProviders = {
-    google: providers.find((p: { id: string }) => p.id === "gemini")?.isAvailable === false,
-    openai: providers.find((p: { id: string }) => p.id === "openai")?.isAvailable === false,
+    google: providers.find((p) => p.id === "gemini")?.isAvailable === false,
+    openai: providers.find((p) => p.id === "openai")?.isAvailable === false,
+    anthropic: providers.find((p) => p.id === "anthropic")?.isAvailable === false,
   }
 
-  const isAnyProviderMissing = missingProviders.google || missingProviders.openai
+  const isAnyProviderMissing = missingProviders.google || missingProviders.openai || missingProviders.anthropic
 
   return (
     <DashboardLayout>
@@ -23,7 +23,6 @@ export default function Home() {
         <SelectChatModel />
       </div>
     </DashboardLayout>
-
   )
 }
 

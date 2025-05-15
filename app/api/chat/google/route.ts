@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
 
     // Validate and sanitize messages
     const validatedMessages = validateMessages(body.messages)
-   
+
     return createDataStreamResponse({
       execute: async (dataStream) => {
         console.log("Starting Google stream execution with model:", selectedModel)
@@ -138,8 +138,8 @@ export async function POST(req: NextRequest) {
           }),
           messages: validatedMessages,
           system: GOOGLE_SEARCH_SUGGESTIONS_PROMPT,
-          temperature: 0.7,
-          maxTokens: 10000,
+          temperature: 0.4,
+          maxTokens: 4000,
           onChunk: ({ chunk }) => {
             if (chunk.type === "text-delta") {
               fullText += chunk.textDelta
@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
                     title,
                     cited_text,
                   }))
-
+                  //console.log("Gemini Cleaned sources:", cleanedSources)
                   if (cleanedSources.length > 0) {
                     dataStream.writeData({ type: "sources", sources: cleanedSources })
                   }

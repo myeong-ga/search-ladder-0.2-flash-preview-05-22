@@ -15,7 +15,11 @@ import { Label } from "@/components/ui/label"
 import type { ProviderType, ChatInterface } from "@/lib/types"
 import { useGeminiChat } from "@/hooks/use-gemini-chat"
 import { useOpenAIChat } from "@/hooks/use-openai-chat"
+import { useAnthropicChat } from "@/hooks/use-anthropic-chat"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
+import { LikeButton } from "@/components/like-button"
+import { ChatMessageSingle } from "./chat-message-single"
+import { TextShimmerLoader } from "./TextShimmerLoader"
 
 interface SingleChatProps {
   providerId: ProviderType
@@ -28,6 +32,7 @@ export function SingleChat({ providerId }: SingleChatProps) {
 
   const geminiChat = useGeminiChat()
   const openaiChat = useOpenAIChat()
+  const anthropicChat = useAnthropicChat()
 
   const formRef = useRef<HTMLFormElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -41,14 +46,14 @@ export function SingleChat({ providerId }: SingleChatProps) {
       case "openai":
         return openaiChat
       case "anthropic":
-        return null
+        return anthropicChat
       default:
         return null
     }
   }
 
   const chat = getProviderChat(providerId)
-  const isLoading = isActive && chat?.isLoading
+  const isLoading = isActive && (chat?.status === "streaming" || chat?.status === "submitted")
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
@@ -74,7 +79,7 @@ export function SingleChat({ providerId }: SingleChatProps) {
   }
 
   const stopGenerating = () => {
-    if (isActive && chat?.isLoading && chat?.stop) {
+    if (isActive && (chat?.status === "streaming" || chat?.status === "submitted") && chat?.stop) {
       chat.stop()
     }
   }
@@ -91,13 +96,16 @@ export function SingleChat({ providerId }: SingleChatProps) {
         <Card className={`h-full flex flex-col ${!isActive ? "opacity-50" : ""}`}>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between mb-2">
-              <CardTitle className="text-lg">{provider?.name || providerId}</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg">{provider?.name || providerId}</CardTitle>
+                <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
+              </div>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="provider-active"
                   checked={isActive}
                   onCheckedChange={toggleActive}
-                  disabled={chat?.isLoading}
+                  disabled={chat?.status === "streaming" || chat?.status === "submitted"}
                 />
                 <Label htmlFor="provider-active">Active</Label>
               </div>
@@ -106,29 +114,32 @@ export function SingleChat({ providerId }: SingleChatProps) {
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
             <div className="space-y-4">
-              {chat?.messages && chat.messages.length > 0 ? (
-                <div className="divide-y">
-                  {chat.messages.map((message: any) => (
-                    <ChatMessage key={message.id} message={message} />
-                  ))}
-                </div>
-              ) : chat?.isLoading ? (
-                <div className="animate-pulse space-y-2">
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                  <div className="h-4 bg-muted rounded w-1/2"></div>
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No response yet</p>
-              )}
+
+            { chat?.status === "submitted" ? (
+              <div className='space-y-2'>
+                <TextShimmerLoader size="sm" className="high-contrast" />
+              </div>
+            ) : chat?.messages && chat.messages.length > 0 ? (
+              <div className="divide-y">
+                {chat.messages.map((message: any) => (
+                  <ChatMessageSingle key={message.id} message={message} />
+                ))}
+              </div>
+            ):(
+              <p className="text-muted-foreground">No response yet</p>
+            )}
+
               {chat?.sources && chat.sources.length > 0 && <SourcesList sources={chat.sources} />}
-              {providerId === "gemini" && chat?.searchSuggestions && chat.searchSuggestions.length > 0 && (
-                <SearchSuggestions
-                  suggestions={chat.searchSuggestions}
-                  reasoning={chat.searchSuggestionsReasoning}
-                  confidence={chat.searchSuggestionsConfidence}
-                  onSuggestionClick={handleSearchSuggestionClick}
-                />
-              )}
+              {(providerId === "gemini" || providerId === "anthropic") &&
+                chat?.searchSuggestions &&
+                chat.searchSuggestions.length > 0 && (
+                  <SearchSuggestions
+                    suggestions={chat.searchSuggestions}
+                    reasoning={chat.searchSuggestionsReasoning}
+                    confidence={chat.searchSuggestionsConfidence}
+                    onSuggestionClick={handleSearchSuggestionClick}
+                  />
+                )}
             </div>
           </CardContent>
         </Card>

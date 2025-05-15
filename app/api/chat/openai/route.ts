@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai"
-import { createDataStreamResponse, smoothStream, streamText } from "ai"
+import { createDataStreamResponse, streamText } from "ai"
 import type { NextRequest } from "next/server"
 import { OPENAI_SYSTEM_PROMPT } from "@/lib/system-prompt"
 import type { ChatMessage } from "@/lib/types"
@@ -9,7 +9,6 @@ export const runtime = "nodejs"
 function validateMessages(messages: any[]): ChatMessage[] {
   return messages
     .filter((message) => {
-      // Validate each message has the required properties
       const isValid =
         message &&
         typeof message === "object" &&
@@ -25,9 +24,7 @@ function validateMessages(messages: any[]): ChatMessage[] {
     .map((message) => ({
       role: message.role,
       content: message.content,
-      // Only include id if it exists
       ...(message.id && { id: message.id }),
-      // Only include name if it exists
       ...(message.name && { name: message.name }),
     }))
 }
@@ -36,7 +33,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    // Validate request body
     if (!body || !Array.isArray(body.messages)) {
       return new Response(JSON.stringify({ error: "Invalid request body. Expected messages array." }), {
         status: 400,
@@ -44,57 +40,43 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Get the selected model from the request or use default
     let selectedModel = "gpt-4.1-mini"
 
-    // Check if the request includes a model selection
     if (body.model && typeof body.model === "string") {
       selectedModel = body.model
     } else {
-      // Get the selected model from cookies as fallback
       const modelCookie = req.cookies.get("selectedOpenAIModel")
       if (modelCookie) {
         selectedModel = modelCookie.value
       }
     }
 
-    // Validate and sanitize messages
     const validatedMessages = validateMessages(body.messages)
 
-    // Use createDataStreamResponse which is designed for this exact use case
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        // Log that we're starting
         console.log("Starting OpenAI stream execution with model:", selectedModel)
 
-        // Create a stream using the OpenAI model with web search
         const result = streamText({
           model: openai(selectedModel),
           messages: validatedMessages,
-          // Add system prompt
           system: OPENAI_SYSTEM_PROMPT,
-          experimental_transform: smoothStream({ chunking: 'line' }),
-          temperature: 0.7,
-          maxTokens: 10000,
+          temperature: 0.4,
+          maxTokens: 4000,
           tools: {
             web_search_preview: openai.tools.webSearchPreview({
               searchContextSize: "high",
             }),
           },
-          // Force web search tool
-          maxSteps: 10,
-          // 1. Text streaming in onChunk handler
+          // toolChoice: { type: 'tool', toolName: 'web_search_preview' },
+         maxSteps: 5,
           onChunk: ({ chunk }) => {
-            // Stream text chunks in real-time to the client
             if (chunk.type === "text-delta") {
               dataStream.writeData({ type: "text-delta", text: chunk.textDelta })
             }
           },
-          // 2. Sources processing in onFinish handler
           onFinish: ({ text, sources }) => {
-            console.log("OpenAI onFinish called")
-
-            // Process and send sources
+            //console.log("OpenAI sources:", sources)
             if (sources && sources.length > 0) {
               const formattedSources = sources
                 .filter((source) => source.sourceType === "url")
@@ -104,13 +86,13 @@ export async function POST(req: NextRequest) {
                 }))
 
               if (formattedSources.length > 0) {
+                //console.log("OpenAI formattedSources:", formattedSources)
                 dataStream.writeData({ type: "sources", sources: formattedSources })
               }
             }
           },
         })
 
-        // Merge the text stream into our data stream
         result.mergeIntoDataStream(dataStream)
       },
       onError: (error) => {
