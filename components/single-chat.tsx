@@ -4,7 +4,7 @@ import type React from "react"
 import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, StopCircle } from "lucide-react"
+import { Send, StopCircle, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SourcesList } from "@/components/sources-list"
 import { SearchSuggestions } from "@/components/search-suggestions"
@@ -101,6 +101,16 @@ export function SingleChat({ providerId }: SingleChatProps) {
                 <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
               </div>
               <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => chat?.resetChat()}
+                  disabled={!isActive || chat?.status === "streaming" || chat?.status === "submitted"}
+                  className="mr-2"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  New Chat
+                </Button>
                 <Switch
                   id="provider-active"
                   checked={isActive}
@@ -121,6 +131,7 @@ export function SingleChat({ providerId }: SingleChatProps) {
                     message={message}
                     status={chat?.status}
                     isLast={index === messages_length - 1}
+                    className="rounded-3xl m-1 font-mono" 
                   />
                 ))}
               </div>

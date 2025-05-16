@@ -1,3 +1,5 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChatMessage } from "@/components/chat-message"
 import { SourcesList } from "@/components/sources-list"
@@ -7,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import type { ProviderType, ChatInterface } from "@/lib/types"
 import { ModelSelector } from "@/components/model-selector"
 import { LikeButton } from "@/components/like-button"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
 import type { Message } from "ai"
 
 interface ProviderProps {
@@ -37,6 +41,20 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
             </div>
             <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => firstProvider.chat?.resetChat()}
+                disabled={
+                  !firstProvider.isActive ||
+                  firstProvider.chat?.status === "streaming" ||
+                  firstProvider.chat?.status === "submitted"
+                }
+                className="mr-2"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                New Chat
+              </Button>
               <Switch
                 id="first-provider-active"
                 checked={firstProvider.isActive}
@@ -87,6 +105,20 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
             </div>
             <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => secondProvider.chat?.resetChat()}
+                disabled={
+                  !secondProvider.isActive ||
+                  secondProvider.chat?.status === "streaming" ||
+                  secondProvider.chat?.status === "submitted"
+                }
+                className="mr-2"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                New Chat
+              </Button>
               <Switch
                 id="second-provider-active"
                 checked={secondProvider.isActive}

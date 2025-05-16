@@ -17,6 +17,7 @@ export function useAnthropicChat() {
   const [status, setStatus] = useState<ChatStatus>("ready")
   const [error, setError] = useState<string | null>(null)
   const [controller, setController] = useState<AbortController | null>(null)
+  const [chatId, setChatId] = useState<string>(() => nanoid())
 
   useEffect(() => {
     if (error && messages.length > 0) {
@@ -39,6 +40,17 @@ export function useAnthropicChat() {
       setStatus("ready")
     }
   }, [controller])
+
+  const resetChat = useCallback(() => {
+    stop()
+    setMessages([])
+    setSources([])
+    setSearchSuggestions([])
+    setSearchSuggestionsReasoning("")
+    setSearchSuggestionsConfidence(null)
+    setError(null)
+    setChatId(nanoid())
+  }, [stop])
 
   const sendMessage = async (message: string | CreateMessage) => {
     try {
@@ -69,10 +81,10 @@ export function useAnthropicChat() {
         body: JSON.stringify({
           messages: [...messages, userMessage],
           model: getSelectedModel("anthropic"),
+          chatId,
         }),
         signal: newController.signal,
       })
-      
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -153,11 +165,9 @@ export function useAnthropicChat() {
         }
         setStatus("ready")
       } catch (err) {
-        // if (err.name !== "AbortError") {
-          console.error("Error reading stream:", err)
-          setError("Error reading response stream")
-          setStatus("error")
-        //}
+        console.error("Error reading stream:", err)
+        setError("Error reading response stream")
+        setStatus("error")
       } finally {
         setController(null)
         if (status !== "error") {
@@ -182,5 +192,7 @@ export function useAnthropicChat() {
     searchSuggestionsReasoning,
     searchSuggestionsConfidence,
     sendMessage,
+    chatId,
+    resetChat,
   }
 }

@@ -64,4 +64,6 @@ export interface ChatInterface {
   searchSuggestions?: SearchSuggestion[]
   searchSuggestionsReasoning?: string
   searchSuggestionsConfidence?: number | null
+  chatId: string
+  resetChat: () => void
 }

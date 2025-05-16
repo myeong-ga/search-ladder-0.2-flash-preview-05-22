@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
 import type { Source } from "@/lib/types"
@@ -15,6 +15,7 @@ export function useGeminiChat() {
   const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
   const [searchSuggestionsConfidence, setSearchSuggestionsConfidence] = useState<number | null>(null)
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
+  const [chatId, setChatId] = useState<string>(() => nanoid())
 
   const {
     messages: chatMessages,
@@ -23,9 +24,10 @@ export function useGeminiChat() {
     data,
     append,
     setMessages,
+    reload,
   } = useChat({
     api: "/api/chat/google",
-    id: "google-search-chat",
+    id: chatId,
     generateId: nanoid,
     experimental_throttle: 50,
     body: {
@@ -109,6 +111,16 @@ export function useGeminiChat() {
     })
   }
 
+  const resetChat = useCallback(() => {
+    setOptimisticMessages([])
+    setSources([])
+    setSearchSuggestions([])
+    setSearchSuggestionsReasoning("")
+    setSearchSuggestionsConfidence(null)
+    setMessages([])
+    setChatId(nanoid())
+  }, [setMessages])
+
   return {
     messages,
     status,
@@ -118,5 +130,7 @@ export function useGeminiChat() {
     searchSuggestionsReasoning,
     searchSuggestionsConfidence,
     sendMessage,
+    chatId,
+    resetChat,
   }
 }

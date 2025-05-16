@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
 import type { Source } from "@/lib/types"
@@ -11,6 +11,7 @@ export function useOpenAIChat() {
   const { getSelectedModel } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
+  const [chatId, setChatId] = useState<string>(() => nanoid())
 
   const {
     messages: chatMessages,
@@ -18,9 +19,10 @@ export function useOpenAIChat() {
     stop,
     data,
     append,
+    setMessages,
   } = useChat({
     api: "/api/chat/openai",
-    id: "openai-search-chat",
+    id: chatId,
     generateId: nanoid,
     experimental_throttle: 50,
     body: {
@@ -71,11 +73,20 @@ export function useOpenAIChat() {
     })
   }
 
+  const resetChat = useCallback(() => {
+    setOptimisticMessages([])
+    setSources([])
+    setMessages([])
+    setChatId(nanoid())
+  }, [setMessages])
+
   return {
     messages,
     status,
     stop,
     sources,
     sendMessage,
+    chatId,
+    resetChat,
   }
 }
