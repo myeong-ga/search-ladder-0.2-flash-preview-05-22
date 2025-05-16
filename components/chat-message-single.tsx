@@ -1,46 +1,44 @@
 "use client"
-
-import type React from "react"
-import { useState, useEffect } from "react"
-import { cn } from "@/lib/utils"
 import type { Message } from "@/lib/types"
 import { User, Bot } from "lucide-react"
 import { MarkdownText } from "./markdown-text"
+import { TextShimmerLoader } from "./TextShimmerLoader"
 
-
-interface ChatMessageProps {
+export interface ChatMessageSingleProps {
   message: Message
+  status?: "submitted" | "streaming" | "ready" | "error"
+  isLast?: boolean
 }
 
-// Define a type for the code component props
-interface CodeComponentProps {
-  node?: any
-  inline?: boolean
-  className?: string
-  children?: React.ReactNode
-  [key: string]: any
-}
-
-export function ChatMessageSingle({ message }: ChatMessageProps) {
-
+export function ChatMessageSingle({ message, status, isLast }: ChatMessageSingleProps) {
   return (
-   <div className={cn("flex gap-3 p-4", message.role === "user" ? "bg-muted/50" : "bg-background")}>
-      <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border bg-background shadow">
-        {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
-      </div>
-       <div className="flex-1 space-y-2">
-        {message.role === "assistant" ? (
-         <div className=" max-w-[80%] font-mono ">
-          <MarkdownText> 
-            {message.content}
-          </MarkdownText>
-        </div>
-        ) : (
-           <div className=" max-w-[80%]">
-            {message.content }
+    <div className="w-full">
+      {status === "submitted" && isLast && message.role === "user" ? (
+        <div className="flex flex-col gap-2 w-full  p-2 mt-2">
+          <div className="flex gap-6 items-start">
+            <div className="flex h-8 w-8 items-center justify-center">
+              <User className="h-4 w-4" />
+            </div>
+            <div className="flex-1 w-full max-w-[80%]">{message.content}</div>
           </div>
-        )}
-      </div>
+          <div className="flex h-8 w-full p-2 pl-12 items-start">
+            <TextShimmerLoader size="md" className="high-contrast" />
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-6 p-2 mt-2 items-start">
+          <div className="flex h-8 w-8 items-center justify-center">
+            {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+          </div>
+          {message.role === "assistant" ? (
+            <div className="flex-1 w-full max-w-[80%] font-mono">
+              <MarkdownText>{message.content}</MarkdownText>
+            </div>
+          ) : (
+            <div className="flex-1 w-full max-w-[80%]">{message.content}</div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

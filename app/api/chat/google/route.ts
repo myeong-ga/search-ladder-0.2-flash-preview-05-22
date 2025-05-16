@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        console.log("Starting Google stream execution with model:", selectedModel)
+        console.log("Starting Gemini stream execution with model:", selectedModel)
 
         let fullText = ""
 
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
             }
           },
           onFinish: ({ text, providerMetadata }) => {
-            console.log("Google onFinish called")
+            console.log("Gemini onFinish called")
 
             try {
               const metadata = providerMetadata as unknown as GoogleProviderMetadata

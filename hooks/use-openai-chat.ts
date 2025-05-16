@@ -10,8 +10,15 @@ import { useLlmProvider } from "@/contexts/llm-provider-context"
 export function useOpenAIChat() {
   const { getSelectedModel } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
+  const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
 
-  const { messages, status, stop, data, append } = useChat({
+  const {
+    messages: chatMessages,
+    status,
+    stop,
+    data,
+    append,
+  } = useChat({
     api: "/api/chat/openai",
     id: "openai-search-chat",
     generateId: nanoid,
@@ -20,6 +27,19 @@ export function useOpenAIChat() {
       model: getSelectedModel("openai"),
     },
   })
+
+  const messages = [
+    ...optimisticMessages,
+    ...chatMessages.filter((chatMsg) => !optimisticMessages.some((optMsg) => optMsg.id === chatMsg.id)),
+  ]
+
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      setOptimisticMessages((prev) =>
+        prev.filter((optMsg) => !chatMessages.some((chatMsg) => chatMsg.id === optMsg.id)),
+      )
+    }
+  }, [chatMessages])
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -38,7 +58,11 @@ export function useOpenAIChat() {
     setSources([])
 
     const userMessage =
-      typeof message === "string" ? ({ role: "user", content: message } as Message | CreateMessage) : message
+      typeof message === "string"
+        ? ({ role: "user", content: message, id: nanoid() } as Message)
+        : ({ ...message, id: message.id || nanoid() } as Message)
+
+    setOptimisticMessages((prev) => [...prev, userMessage])
 
     await append(userMessage, {
       body: {

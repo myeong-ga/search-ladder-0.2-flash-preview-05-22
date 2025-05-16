@@ -14,8 +14,16 @@ export function useGeminiChat() {
   const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
   const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
   const [searchSuggestionsConfidence, setSearchSuggestionsConfidence] = useState<number | null>(null)
+  const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
 
-  const { messages, status, stop, data, append, setMessages } = useChat({
+  const {
+    messages: chatMessages,
+    status,
+    stop,
+    data,
+    append,
+    setMessages,
+  } = useChat({
     api: "/api/chat/google",
     id: "google-search-chat",
     generateId: nanoid,
@@ -24,6 +32,19 @@ export function useGeminiChat() {
       model: getSelectedModel("gemini"),
     },
   })
+
+  const messages = [
+    ...optimisticMessages,
+    ...chatMessages.filter((chatMsg) => !optimisticMessages.some((optMsg) => optMsg.id === chatMsg.id)),
+  ]
+
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      setOptimisticMessages((prev) =>
+        prev.filter((optMsg) => !chatMessages.some((chatMsg) => chatMsg.id === optMsg.id)),
+      )
+    }
+  }, [chatMessages])
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -75,7 +96,11 @@ export function useGeminiChat() {
     setSearchSuggestionsConfidence(null)
 
     const userMessage =
-      typeof message === "string" ? ({ role: "user", content: message } as Message | CreateMessage) : message
+      typeof message === "string"
+        ? ({ role: "user", content: message, id: nanoid() } as Message)
+        : ({ ...message, id: message.id || nanoid() } as Message)
+
+    setOptimisticMessages((prev) => [...prev, userMessage])
 
     await append(userMessage, {
       body: {

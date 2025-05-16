@@ -6,20 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Send, StopCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChatMessage } from "@/components/chat-message"
 import { SourcesList } from "@/components/sources-list"
 import { SearchSuggestions } from "@/components/search-suggestions"
 import { ModelSelector } from "@/components/model-selector"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import type { ProviderType, ChatInterface } from "@/lib/types"
+import type { ProviderType, ChatInterface, Message } from "@/lib/types"
 import { useGeminiChat } from "@/hooks/use-gemini-chat"
 import { useOpenAIChat } from "@/hooks/use-openai-chat"
 import { useAnthropicChat } from "@/hooks/use-anthropic-chat"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 import { LikeButton } from "@/components/like-button"
 import { ChatMessageSingle } from "./chat-message-single"
-import { TextShimmerLoader } from "./TextShimmerLoader"
 
 interface SingleChatProps {
   providerId: ProviderType
@@ -90,6 +88,8 @@ export function SingleChat({ providerId }: SingleChatProps) {
     }
   }
 
+  const messages_length = chat?.messages ? chat.messages.length : 0
+
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] mx-auto">
       <div className="flex-1">
@@ -114,20 +114,16 @@ export function SingleChat({ providerId }: SingleChatProps) {
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
             <div className="space-y-4">
-
-            { chat?.status === "submitted" ? (
-              <div className='space-y-2'>
-                <TextShimmerLoader size="sm" className="high-contrast" />
-              </div>
-            ) : chat?.messages && chat.messages.length > 0 ? (
-              <div className="divide-y">
-                {chat.messages.map((message: any) => (
-                  <ChatMessageSingle key={message.id} message={message} />
+              <div className="flex flex-col">
+                {chat?.messages.map((message: Message, index) => (
+                  <ChatMessageSingle
+                    key={message.id}
+                    message={message}
+                    status={chat?.status}
+                    isLast={index === messages_length - 1}
+                  />
                 ))}
               </div>
-            ):(
-              <p className="text-muted-foreground">No response yet</p>
-            )}
 
               {chat?.sources && chat.sources.length > 0 && <SourcesList sources={chat.sources} />}
               {(providerId === "gemini" || providerId === "anthropic") &&

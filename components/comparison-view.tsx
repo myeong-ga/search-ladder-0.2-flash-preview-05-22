@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import type { ProviderType, ChatInterface } from "@/lib/types"
 import { ModelSelector } from "@/components/model-selector"
 import { LikeButton } from "@/components/like-button"
-import { TextShimmerLoader } from "./TextShimmerLoader"
+import type { Message } from "ai"
 
 interface ProviderProps {
   id: ProviderType
@@ -24,6 +24,8 @@ interface ComparisonViewProps {
 }
 
 export function ComparisonView({ firstProvider, secondProvider, onSearchSuggestionClick }: ComparisonViewProps) {
+  const firstProvider_messages_length = firstProvider.chat?.messages ? firstProvider.chat.messages.length : 0
+  const secondProvider_messages_length = secondProvider.chat?.messages ? secondProvider.chat.messages.length : 0
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
@@ -48,21 +50,17 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
           <div className="space-y-4">
+            <div className="flex flex-col">
+              {firstProvider.chat?.messages.map((message: Message, index) => (
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  status={firstProvider.chat?.status}
+                  isLast={index === firstProvider_messages_length - 1}
+                />
+              ))}
+            </div>
 
-            { firstProvider.chat?.status === "submitted" ? (
-              <div className='mb-4'>
-                <TextShimmerLoader size="sm" className="high-contrast" />
-              </div>
-            ) : firstProvider.chat?.messages && firstProvider.chat.messages.length > 0 ? (
-              <div className="divide-y">
-                {firstProvider.chat.messages.map((message: any) => (
-                  <ChatMessage key={message.id} message={message} />
-                ))}
-              </div>
-            ):(
-              <p className="text-muted-foreground">No response yet</p>
-            )}
-          
             {firstProvider.chat?.sources && firstProvider.chat.sources.length > 0 && (
               <SourcesList sources={firstProvider.chat.sources} />
             )}
@@ -77,7 +75,6 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
                   onSuggestionClick={onSearchSuggestionClick}
                 />
               )}
-
           </div>
         </CardContent>
       </Card>
@@ -103,20 +100,16 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
           <div className="space-y-4">
-
-           { secondProvider.chat?.status === "submitted" ? (
-              <div className='mb-4'>
-                <TextShimmerLoader size="sm" className="high-contrast" />
-              </div>
-            ) : secondProvider.chat?.messages && secondProvider.chat.messages.length > 0 ? (
-              <div className="divide-y">
-                {secondProvider.chat.messages.map((message: any) => (
-                  <ChatMessage key={message.id} message={message} />
-                ))}
-              </div>
-            ):(
-              <p className="text-muted-foreground">No response yet</p>
-            )}
+            <div className="flex flex-col">
+              {secondProvider.chat?.messages.map((message: Message, index) => (
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  status={secondProvider.chat?.status}
+                  isLast={index === secondProvider_messages_length - 1}
+                />
+              ))}
+            </div>
 
             {secondProvider.chat?.sources && secondProvider.chat.sources.length > 0 && (
               <SourcesList sources={secondProvider.chat.sources} />

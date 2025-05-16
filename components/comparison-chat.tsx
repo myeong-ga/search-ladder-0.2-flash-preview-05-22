@@ -169,7 +169,7 @@ export function ComparisonChat({ selectedProviders }: ComparisonChatProps) {
 
       <div className="p-4 w-full">
         <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-2 w-full items-center">
-          <div className="relative w-full max-w-[768px] mx-auto">
+          <div className="relative w-full max-w-[768px] mx-auto"> 
             <Textarea
               ref={textareaRef}
               value={input}

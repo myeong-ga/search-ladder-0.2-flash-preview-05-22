@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
 
           const sources: any[] = []
           let fullText = ""
-
+          console.log("Starting Claude stream execution with model:", selectedModel)
           for await (const chunk of stream) {
             if (chunk.type === "content_block_delta") {
               if (chunk.delta.type === "text_delta") {
@@ -177,6 +177,7 @@ export async function POST(req: NextRequest) {
             }
           }
 
+         console.log("Claude onFinish called")
           if (sources.length > 0) {
             const data = {
               type: "sources",

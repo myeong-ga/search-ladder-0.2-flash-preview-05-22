@@ -54,11 +54,11 @@ export function useAnthropicChat() {
 
       const newController = new AbortController()
       setController(newController)
-      setStatus("submitted")
 
       const userMessage: Message =
         typeof message === "string" ? { id: nanoid(), role: "user", content: message } : { id: nanoid(), ...message }
 
+      setStatus("submitted")
       setMessages((prevMessages) => [...prevMessages, userMessage])
 
       const response = await fetch("/api/chat/anthropic", {
@@ -72,6 +72,7 @@ export function useAnthropicChat() {
         }),
         signal: newController.signal,
       })
+      
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
