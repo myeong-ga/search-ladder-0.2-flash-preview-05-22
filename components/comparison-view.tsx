@@ -12,6 +12,8 @@ import { LikeButton } from "@/components/like-button"
 import { Button } from "@/components/ui/button"
 import { RefreshCw } from "lucide-react"
 import type { Message } from "ai"
+import { TokenUsageDisplay } from "@/components/token-usage-display"
+import { useLlmProvider } from "@/contexts/llm-provider-context"
 
 interface ProviderProps {
   id: ProviderType
@@ -28,8 +30,20 @@ interface ComparisonViewProps {
 }
 
 export function ComparisonView({ firstProvider, secondProvider, onSearchSuggestionClick }: ComparisonViewProps) {
+  const { providers } = useLlmProvider()
   const firstProvider_messages_length = firstProvider.chat?.messages ? firstProvider.chat.messages.length : 0
   const secondProvider_messages_length = secondProvider.chat?.messages ? secondProvider.chat.messages.length : 0
+
+  const getSelectedModelName = (providerId: ProviderType, modelId?: string) => {
+    if (!modelId) return undefined
+    const provider = providers.find((p) => p.id === providerId)
+    if (!provider) return undefined
+    const model = provider.models.find((m) => m.id === modelId)
+    return model?.name
+  }
+
+  const firstProviderModelId = providers.find((p) => p.id === firstProvider.id)?.models.find((m) => m.isDefault)?.id
+  const secondProviderModelId = providers.find((p) => p.id === secondProvider.id)?.models.find((m) => m.isDefault)?.id
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
@@ -75,6 +89,7 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
                   message={message}
                   status={firstProvider.chat?.status}
                   isLast={index === firstProvider_messages_length - 1}
+                  className="hover:bg-muted/20 transition-colors"
                 />
               ))}
             </div>
@@ -93,6 +108,13 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
                   onSuggestionClick={onSearchSuggestionClick}
                 />
               )}
+
+            {firstProvider.chat?.tokenUsage && (
+              <TokenUsageDisplay
+                tokenUsage={firstProvider.chat.tokenUsage}
+                modelName={getSelectedModelName(firstProvider.id, firstProviderModelId)}
+              />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -157,6 +179,13 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
                   onSuggestionClick={onSearchSuggestionClick}
                 />
               )}
+
+            {secondProvider.chat?.tokenUsage && (
+              <TokenUsageDisplay
+                tokenUsage={secondProvider.chat.tokenUsage}
+                modelName={getSelectedModelName(secondProvider.id, secondProviderModelId)}
+              />
+            )}
           </div>
         </CardContent>
       </Card>

@@ -5,10 +5,11 @@ import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Send, StopCircle, RefreshCw } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 import { SourcesList } from "@/components/sources-list"
 import { SearchSuggestions } from "@/components/search-suggestions"
 import { ModelSelector } from "@/components/model-selector"
+import { ProviderSelector } from "@/components/provider-selector"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import type { ProviderType, ChatInterface, Message } from "@/lib/types"
@@ -18,14 +19,16 @@ import { useAnthropicChat } from "@/hooks/use-anthropic-chat"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 import { LikeButton } from "@/components/like-button"
 import { ChatMessageSingle } from "./chat-message-single"
+import { TokenUsageDisplay } from "./token-usage-display"
 
 interface SingleChatProps {
-  providerId: ProviderType
+  initialProviderId?: ProviderType
 }
 
-export function SingleChat({ providerId }: SingleChatProps) {
+export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
   const [input, setInput] = useState("")
   const [isActive, setIsActive] = useState(true)
+  const [providerId, setProviderId] = useState<ProviderType>(initialProviderId)
   const { providers } = useLlmProvider()
 
   const geminiChat = useGeminiChat()
@@ -65,6 +68,13 @@ export function SingleChat({ providerId }: SingleChatProps) {
     setIsActive((prev) => !prev)
   }
 
+  const handleProviderChange = (newProviderId: ProviderType) => {
+    if (isLoading) {
+      chat?.stop()
+    }
+    setProviderId(newProviderId)
+  }
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
 
@@ -90,11 +100,17 @@ export function SingleChat({ providerId }: SingleChatProps) {
 
   const messages_length = chat?.messages ? chat.messages.length : 0
 
+  const getSelectedModelName = () => {
+    if (!provider) return undefined
+    const selectedModel = provider.models.find((m) => m.isDefault)
+    return selectedModel?.name
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] mx-auto">
       <div className="flex-1">
         <Card className={`h-full flex flex-col ${!isActive ? "opacity-50" : ""}`}>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-0">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-lg">{provider?.name || providerId}</CardTitle>
@@ -120,10 +136,19 @@ export function SingleChat({ providerId }: SingleChatProps) {
                 <Label htmlFor="provider-active">Active</Label>
               </div>
             </div>
-            <ModelSelector providerId={providerId} />
+            <div className="grid grid-cols-2 gap-2">
+              <ProviderSelector selectedProvider={providerId} onProviderChange={handleProviderChange} />
+              <ModelSelector providerId={providerId} />
+            </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
-            <div className="space-y-4">
+          <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-19rem)]"
+         >
+            <div className="relative space-y-4">
+              <div className="sticky top-0 left-0 right-0  h-1 z-9 backdrop-blur-[8px]"/>
+              <div className="sticky top-1 left-0 right-0  h-1 z-9 backdrop-blur-[4px]"/>
+              <div className="sticky top-2 left-0 right-0  h-2 z-9 backdrop-blur-[2px]"/>
+              <div className="sticky top-4 left-0 right-0  h-2 z-9 backdrop-blur-[1px]"/>
+
               <div className="flex flex-col">
                 {chat?.messages.map((message: Message, index) => (
                   <ChatMessageSingle
@@ -131,7 +156,7 @@ export function SingleChat({ providerId }: SingleChatProps) {
                     message={message}
                     status={chat?.status}
                     isLast={index === messages_length - 1}
-                    className="rounded-3xl m-1 font-mono" 
+                    className="rounded-3xl m-1 font-mono"
                   />
                 ))}
               </div>
@@ -147,6 +172,10 @@ export function SingleChat({ providerId }: SingleChatProps) {
                     onSuggestionClick={handleSearchSuggestionClick}
                   />
                 )}
+
+              {chat?.tokenUsage && (
+                <TokenUsageDisplay tokenUsage={chat.tokenUsage} modelName={getSelectedModelName()} />
+              )}
             </div>
           </CardContent>
         </Card>

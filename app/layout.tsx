@@ -7,7 +7,7 @@ import { GeistMono } from 'geist/font/mono';
 import { ThemeProvider } from "@/components/theme-provider"
 import { LlmProviderContextProvider } from "@/contexts/llm-provider-context"
 import { Toaster } from "sonner"
-
+import { CustomToaster } from "@/components/custom-toaster"
 
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default function RootLayout({
               </header>
               <main className="flex-1">{children}</main>
             </div>
-            <Toaster position="top-right" />
+            <CustomToaster />
           </LlmProviderContextProvider>
         </ThemeProvider>
       </body>

@@ -57,12 +57,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     {
       title: "LLM Leaderboard",
       icon: MessageSquare,
-      href: "/dashboard/ask",
+      href: "/dashboard/compare",
     },
     {
       title: "Research",
       icon: Search,
-      href: "/dashboard/search",
+      href: "/dashboard/research",
     },
     {
       title: "Analytics",

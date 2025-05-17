@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
-import type { Source } from "@/lib/types"
+import type { Source, TokenUsage } from "@/lib/types"
 import { nanoid } from "@/lib/nanoid"
 import type { SearchSuggestion } from "@/lib/types"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
@@ -16,6 +16,7 @@ export function useGeminiChat() {
   const [searchSuggestionsConfidence, setSearchSuggestionsConfidence] = useState<number | null>(null)
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
   const [chatId, setChatId] = useState<string>(() => nanoid())
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
 
   const {
     messages: chatMessages,
@@ -71,6 +72,21 @@ export function useGeminiChat() {
             }
           }
 
+          if (item.type === "usage" && typeof item.usage === "object") {
+            const usage = item.usage as any
+            if (
+              typeof usage.promptTokens === "number" &&
+              typeof usage.completionTokens === "number" &&
+              typeof usage.totalTokens === "number"
+            ) {
+              setTokenUsage({
+                promptTokens: usage.promptTokens,
+                completionTokens: usage.completionTokens,
+                totalTokens: usage.totalTokens,
+              })
+            }
+          }
+
           if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
             setMessages((prevMessages) => {
               const newMessages = [...prevMessages]
@@ -96,6 +112,7 @@ export function useGeminiChat() {
     setSearchSuggestions([])
     setSearchSuggestionsReasoning("")
     setSearchSuggestionsConfidence(null)
+    setTokenUsage(null)
 
     const userMessage =
       typeof message === "string"
@@ -119,12 +136,14 @@ export function useGeminiChat() {
     setSearchSuggestionsConfidence(null)
     setMessages([])
     setChatId(nanoid())
+    setTokenUsage(null)
   }, [setMessages])
 
   return {
     messages,
     status,
     stop,
+    tokenUsage,
     sources,
     searchSuggestions,
     searchSuggestionsReasoning,

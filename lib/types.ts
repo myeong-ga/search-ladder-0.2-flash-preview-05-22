@@ -18,23 +18,19 @@ export interface SearchSuggestion {
   reasoning?: string
 }
 
-export interface ChatMessage {
+export interface ModelMessage {
   role: "user" | "assistant" | "system"
   content: string
   id?: string
   name?: string
 }
 
-export interface AnthropicMessage {
+export interface AnthropicModelMessage {
   id: string
   role: "user" | "assistant"
   content: string
 }
 
-export interface ChatRequest {
-  messages: ChatMessage[]
-  id?: string
-}
 
 export type ProviderType = "gemini" | "openai" | "anthropic"
 
@@ -55,6 +51,12 @@ export interface ProviderInfo {
 
 export type ChatStatus = "submitted" | "streaming" | "ready" | "error"
 
+export interface TokenUsage {
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+}
+
 export interface ChatInterface {
   messages: Message[]
   status: ChatStatus
@@ -66,4 +68,5 @@ export interface ChatInterface {
   searchSuggestionsConfidence?: number | null
   chatId: string
   resetChat: () => void
+  tokenUsage?: TokenUsage | null
 }

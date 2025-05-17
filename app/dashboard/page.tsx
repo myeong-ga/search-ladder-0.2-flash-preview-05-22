@@ -122,13 +122,13 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-4">
                 <Button asChild className="w-full justify-start" size="lg">
-                  <Link href="/dashboard/ask">
+                  <Link href="/dashboard/compare">
                     <MessageSquare className="mr-2 h-5 w-5" />
                     LLM Leaderboard
                   </Link>
                 </Button>
                 <Button asChild className="w-full justify-start" size="lg" variant="outline">
-                  <Link href="/dashboard/search">
+                  <Link href="/dashboard/research">
                     <Search className="mr-2 h-5 w-5" />
                     Research
                   </Link>

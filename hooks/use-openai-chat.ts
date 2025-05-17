@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
-import type { Source } from "@/lib/types"
+import type { Source , TokenUsage} from "@/lib/types"
 import { nanoid } from "@/lib/nanoid"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 
@@ -12,6 +12,7 @@ export function useOpenAIChat() {
   const [sources, setSources] = useState<Source[]>([])
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
   const [chatId, setChatId] = useState<string>(() => nanoid())
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
 
   const {
     messages: chatMessages,
@@ -46,19 +47,33 @@ export function useOpenAIChat() {
   useEffect(() => {
     if (data && Array.isArray(data)) {
       for (const item of data) {
-        if (item && typeof item === "object" && "type" in item && item.type === "sources") {
-          if ("sources" in item && Array.isArray(item.sources)) {
+         if (item && typeof item === "object" && "type" in item) {
+
+           if (item.type === "sources" && "sources" in item && Array.isArray(item.sources)) {
             setSources(item.sources as Source[])
-            return
           }
-        }
+          if (item.type === "usage" && typeof item.usage === "object") {
+              const usage = item.usage as any
+              if (
+                typeof usage.prompt_tokens === "number" &&
+                typeof usage.completion_tokens === "number" &&
+                typeof usage.total_tokens === "number"
+              ) {
+                setTokenUsage({
+                  promptTokens: usage.prompt_tokens,
+                  completionTokens: usage.completion_tokens,
+                  totalTokens: usage.total_tokens,
+                })
+              }
+            }
+          }
       }
     }
   }, [data])
 
   const sendMessage = async (message: string | CreateMessage) => {
     setSources([])
-
+    setTokenUsage(null)
     const userMessage =
       typeof message === "string"
         ? ({ role: "user", content: message, id: nanoid() } as Message)
@@ -76,6 +91,7 @@ export function useOpenAIChat() {
   const resetChat = useCallback(() => {
     setOptimisticMessages([])
     setSources([])
+    setTokenUsage(null)
     setMessages([])
     setChatId(nanoid())
   }, [setMessages])
@@ -85,6 +101,7 @@ export function useOpenAIChat() {
     status,
     stop,
     sources,
+    tokenUsage,
     sendMessage,
     chatId,
     resetChat,

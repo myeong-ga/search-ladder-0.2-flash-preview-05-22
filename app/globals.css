@@ -75,6 +75,7 @@
   --sidebar-ring: oklch(0.708 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.13 0.028 261.692);
+  --toast-bg-gradient: linear-gradient(to right, #8b5cf6, #6d28d9);
 }
 
 .dark {
@@ -109,6 +110,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --toast-bg-gradient: linear-gradient(to right, #9333ea, #7e22ce);
 }
 
 
@@ -389,3 +391,30 @@ pre code {
   .animate-shimmer {
     animation: shimmer 2s linear infinite;
   }
+
+  /* Custom Toast Styling */
+[data-sonner-toast] {
+  background: var(--toast-bg-gradient) !important;
+  border: none !important;
+  color: white !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  background: linear-gradient(to right, #8b5cf6, #6d28d9) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  background: linear-gradient(to right, #ef4444, #b91c1c) !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  background: linear-gradient(to right, #8b5cf6, #6d28d9) !important;
+}
+
+.dark [data-sonner-toast] {
+  background: var(--toast-bg-gradient) !important;
+}

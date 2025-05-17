@@ -5,14 +5,16 @@ import { TextShimmerLoader } from "./TextShimmerLoader"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { copyToClipboard } from "@/lib/copy-to-clipboard"
+import { cn } from "@/lib/utils"
 
 export interface ChatMessageProps {
   message: Message
   status?: "submitted" | "streaming" | "ready" | "error"
   isLast?: boolean
+  className?: string
 }
 
-export function ChatMessage({ message, status, isLast }: ChatMessageProps) {
+export function ChatMessage({ message, status, isLast, className }: ChatMessageProps) {
   const [isCopied, setIsCopied] = useState(false)
 
   const handleCopy = async () => {
@@ -25,7 +27,7 @@ export function ChatMessage({ message, status, isLast }: ChatMessageProps) {
 
   if (status === "submitted" && isLast && message.role === "user") {
     return (
-      <div className="w-full">
+      <div className={cn("w-full", className)}>
         <div className="flex gap-6 p-2 items-start">
           <div className="flex h-5 w-5 m-1 shrink-0 select-none items-center justify-center bg-background">
             {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
@@ -50,7 +52,7 @@ export function ChatMessage({ message, status, isLast }: ChatMessageProps) {
   }
 
   return (
-    <div className="w-full">
+    <div className={cn("w-full", className)}>
       <div className="flex gap-6 p-2 items-start">
         <div className="flex h-5 w-5 m-1 shrink-0 select-none items-center justify-center bg-background">
           {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}

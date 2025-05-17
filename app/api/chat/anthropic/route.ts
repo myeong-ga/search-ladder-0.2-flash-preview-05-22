@@ -2,7 +2,7 @@ import { ANTHROPIC_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
 import Anthropic from "@anthropic-ai/sdk"
 import type { ToolUnion } from "@anthropic-ai/sdk/resources/index.mjs"
 import type { NextRequest } from "next/server"
-import type { AnthropicMessage } from "@/lib/types"
+import type { AnthropicModelMessage } from "@/lib/types"
 
 export const runtime = "nodejs"
 
@@ -46,7 +46,7 @@ function removeSearchTermsJson(text: string): string {
   return text.replace(pattern, "").trim()
 }
 
-function validateMessages(messages: any[]): AnthropicMessage[] {
+function validateMessages(messages: any[]): AnthropicModelMessage[] {
   return messages
     .filter((message) => {
       const isValid =

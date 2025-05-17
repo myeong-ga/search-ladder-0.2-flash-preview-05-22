@@ -18,10 +18,11 @@ export default function Home() {
 
   return (
     <DashboardLayout>
-       <div className="py-1">
+       <div className="container py-1">
         {isAnyProviderMissing && !isLoading && <ApiKeyWarning missingProviders={missingProviders} />}
         <SelectChatModel />
       </div>
+  
     </DashboardLayout>
   )
 }

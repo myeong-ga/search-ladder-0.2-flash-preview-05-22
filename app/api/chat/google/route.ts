@@ -2,7 +2,7 @@ import { google } from "@ai-sdk/google"
 import { createDataStreamResponse, streamText } from "ai"
 import type { NextRequest } from "next/server"
 import { GOOGLE_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
-import type { ChatMessage } from "@/lib/types"
+import type { ModelMessage } from "@/lib/types"
 
 interface GoogleGroundingMetadata {
   searchEntryPoint?: {
@@ -69,7 +69,7 @@ function removeSearchTermsJson(text: string): string {
   return text.replace(pattern, "").trim()
 }
 
-function validateMessages(messages: any[]): ChatMessage[] {
+function validateMessages(messages: any[]): ModelMessage[] {
   return messages
     .filter((message) => {
       // Validate each message has the required properties
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
               })
             }
           },
-          onFinish: ({ text, providerMetadata }) => {
+          onFinish: ({ text, providerMetadata ,usage }) => {
             console.log("Gemini onFinish called")
 
             try {
@@ -208,13 +208,24 @@ export async function POST(req: NextRequest) {
                   reasoning: searchSuggestions.reasoning,
                 })
               }
-
+              
               const cleanedText = removeSearchTermsJson(fullText)
               dataStream.writeData({
                 type: "cleaned-text",
                 text: cleanedText,
                 messageId: Date.now().toString(),
               })
+
+              if (usage) {
+                dataStream.writeData({
+                  type: "usage",
+                  usage: {
+                    promptTokens: usage.promptTokens,
+                    completionTokens: usage.completionTokens,
+                    totalTokens: usage.totalTokens,
+                  },
+                })
+              }
             } catch (error) {
               console.error("Error processing metadata in onFinish:", error)
             }

@@ -2,11 +2,11 @@ import { openai } from "@ai-sdk/openai"
 import { createDataStreamResponse, streamText } from "ai"
 import type { NextRequest } from "next/server"
 import { OPENAI_SYSTEM_PROMPT } from "@/lib/system-prompt"
-import type { ChatMessage } from "@/lib/types"
+import type { ModelMessage } from "@/lib/types"
 
 export const runtime = "nodejs"
 
-function validateMessages(messages: any[]): ChatMessage[] {
+function validateMessages(messages: any[]): ModelMessage[] {
   return messages
     .filter((message) => {
       const isValid =
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
               dataStream.writeData({ type: "text-delta", text: chunk.textDelta })
             }
           },
-          onFinish: ({ text, sources }) => {
+          onFinish: ({ text, sources , usage }) => {
             //console.log("OpenAI sources:", sources)
             if (sources && sources.length > 0) {
               const formattedSources = sources
@@ -89,6 +89,16 @@ export async function POST(req: NextRequest) {
                 //console.log("OpenAI formattedSources:", formattedSources)
                 dataStream.writeData({ type: "sources", sources: formattedSources })
               }
+            }
+            if (usage) {
+              dataStream.writeData({
+                type: "usage",
+                usage: {
+                  prompt_tokens: usage.promptTokens,
+                  completion_tokens: usage.completionTokens,
+                  total_tokens: usage.totalTokens,
+                },
+              })
             }
           },
         })
