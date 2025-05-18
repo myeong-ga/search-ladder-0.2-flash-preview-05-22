@@ -25,7 +25,6 @@ export function useGeminiChat() {
     data,
     append,
     setMessages,
-    reload,
   } = useChat({
     api: "/api/chat/google",
     id: chatId,
@@ -55,9 +54,7 @@ export function useGeminiChat() {
         if (item && typeof item === "object" && "type" in item) {
           if (item.type === "sources" && "sources" in item && Array.isArray(item.sources)) {
             setSources(item.sources as Source[])
-          }
-
-          if (item.type === "searchSuggestions") {
+          } else if (item.type === "searchSuggestions") {
             if ("searchSuggestions" in item && Array.isArray(item.searchSuggestions)) {
               const suggestions = item.searchSuggestions.map((term) => ({ term }))
               setSearchSuggestions(suggestions as SearchSuggestion[])
@@ -70,9 +67,7 @@ export function useGeminiChat() {
                 setSearchSuggestionsReasoning(item.reasoning)
               }
             }
-          }
-
-          if (item.type === "usage" && typeof item.usage === "object") {
+          } else if (item.type === "usage" && typeof item.usage === "object") {
             const usage = item.usage as any
             if (
               typeof usage.promptTokens === "number" &&
@@ -83,11 +78,10 @@ export function useGeminiChat() {
                 promptTokens: usage.promptTokens,
                 completionTokens: usage.completionTokens,
                 totalTokens: usage.totalTokens,
+                finishReason: usage.finishReason || "unknown",
               })
             }
-          }
-
-          if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
+          } else if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
             setMessages((prevMessages) => {
               const newMessages = [...prevMessages]
               for (let i = newMessages.length - 1; i >= 0; i--) {

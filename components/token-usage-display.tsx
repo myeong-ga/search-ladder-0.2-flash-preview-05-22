@@ -1,13 +1,42 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { TokenUsage } from "@/lib/types"
+import type { TokenUsage, ProviderType } from "@/lib/types"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { InfoIcon } from "lucide-react"
+import { useLlmProvider } from "@/contexts/llm-provider-context"
 
 interface TokenUsageDisplayProps {
   tokenUsage: TokenUsage | null | undefined
-  modelName?: string
+  providerId: ProviderType
 }
 
-export function TokenUsageDisplay({ tokenUsage, modelName }: TokenUsageDisplayProps) {
+export function TokenUsageDisplay({ tokenUsage, providerId }: TokenUsageDisplayProps) {
+  const { getSelectedModel, providers } = useLlmProvider()
+
   if (!tokenUsage) return null
+
+  const selectedModelId = getSelectedModel(providerId)
+  const provider = providers.find((p) => p.id === providerId)
+  const model = provider?.models.find((m) => m.id === selectedModelId)
+  const modelName = model?.name || selectedModelId
+
+  const getFinishReasonDescription = (reason: string): string => {
+    switch (reason.toLowerCase()) {
+      case "stop":
+        return "Model reached a natural stopping point or stop token"
+      case "length":
+        return "Response exceeded maximum allowed tokens"
+      case "content_filter":
+        return "Content was filtered due to safety settings"
+      case "tool_calls":
+        return "Model called a tool to complete the response"
+      case "function_call":
+        return "Model called a function to complete the response"
+      case "max_tokens":
+        return "Response reached the maximum token limit"
+      default:
+        return `Finished with reason: ${reason}`
+    }
+  }
 
   return (
     <Card className="mt-4">
@@ -29,6 +58,23 @@ export function TokenUsageDisplay({ tokenUsage, modelName }: TokenUsageDisplayPr
             <span className="font-mono">{tokenUsage.totalTokens.toLocaleString()}</span>
           </div>
         </div>
+
+        {tokenUsage.finishReason && (
+          <div className="mt-2 pt-2 border-t flex items-center">
+            <span className="text-xs text-muted-foreground mr-1">Finish Reason:</span>
+            <span className="text-xs font-mono">{tokenUsage.finishReason}</span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <InfoIcon className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs max-w-xs">{getFinishReasonDescription(tokenUsage.finishReason)}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

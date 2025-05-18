@@ -57,10 +57,10 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                   <Card className="col-span-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="col-span-2">
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle className="tracking-tight">Recent Activity</CardTitle>
               <CardDescription>Your recent resource management queries and insights</CardDescription>
             </CardHeader>
             <CardContent>
@@ -68,7 +68,7 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-4 rounded-lg border p-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
+                    <p className="text-sm ">
                       What emerging digital trends should our resource allocation strategy consider?
                     </p>
                     <p className="text-xs text-muted-foreground">2 minutes ago</p>
@@ -77,7 +77,7 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-4 rounded-lg border p-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
+                    <p className="text-sm ">
                       How can we optimize cloud resource distribution for our dynamic workloads?
                     </p>
                     <p className="text-xs text-muted-foreground">1 hour ago</p>
@@ -86,7 +86,7 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-4 rounded-lg border p-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
+                    <p className="text-sm text-muted-foreground">
                       Identify potential resource bottlenecks in our current digital infrastructure
                     </p>
                     <p className="text-xs text-muted-foreground">3 hours ago</p>
@@ -95,7 +95,7 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-4 rounded-lg border p-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
+                    <p className="text-sm text-muted-foreground">
                       Which emerging startups should we monitor for potential partnership opportunities?
                     </p>
                     <p className="text-xs text-muted-foreground">5 hours ago</p>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-4 rounded-lg border p-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
+                   <p className="text-sm text-muted-foreground">
                       Analyze market volatility impact on our current resource allocation strategy
                     </p>
                     <p className="text-xs text-muted-foreground">Yesterday</p>
@@ -114,9 +114,9 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="lg:col-start-3">
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle className="tracking-tight">Quick Actions</CardTitle>
               <CardDescription>Common tasks and features</CardDescription>
             </CardHeader>
             <CardContent>

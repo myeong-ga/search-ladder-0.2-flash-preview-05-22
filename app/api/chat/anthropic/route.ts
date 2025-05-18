@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       content: msg.content,
     }))
 
-    const tools = [{ name: "web_search", type: "web_search_20250305" }] as ToolUnion[]
+    const tools = [{ name: "web_search", type: "web_search_20250305" ,max_uses:1 , cache_control:{"type": "ephemeral"} }] as ToolUnion[]
 
     const encoder = new TextEncoder()
     const readableStream = new ReadableStream({
@@ -118,10 +118,13 @@ export async function POST(req: NextRequest) {
         try {
           const stream = await anthropic.messages.stream({
             model: selectedModel,
-            max_tokens: 4000,
+            max_tokens: 2048,
+            temperature: 0.2,
+            top_p: 0.8,
             system: ANTHROPIC_SEARCH_SUGGESTIONS_PROMPT, // Use the search suggestions prompt
             messages: formattedMessages,
             tools,
+
           })
 
           const sources: any[] = []
@@ -164,6 +167,7 @@ export async function POST(req: NextRequest) {
                   type: "stop_reason",
                   stop_reason: chunk.delta.stop_reason,
                 }
+               
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
               }
 

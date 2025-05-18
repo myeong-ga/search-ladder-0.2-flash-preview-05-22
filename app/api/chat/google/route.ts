@@ -139,7 +139,8 @@ export async function POST(req: NextRequest) {
           messages: validatedMessages,
           system: GOOGLE_SEARCH_SUGGESTIONS_PROMPT,
           temperature: 0.4,
-          maxTokens: 4000,
+          topP: 0.8,
+          maxTokens: 8192,
           onChunk: ({ chunk }) => {
             if (chunk.type === "text-delta") {
               fullText += chunk.textDelta
@@ -150,7 +151,7 @@ export async function POST(req: NextRequest) {
               })
             }
           },
-          onFinish: ({ text, providerMetadata ,usage }) => {
+          onFinish: ({ text, providerMetadata ,usage, finishReason }) => {
             console.log("Gemini onFinish called")
 
             try {
@@ -223,6 +224,7 @@ export async function POST(req: NextRequest) {
                     promptTokens: usage.promptTokens,
                     completionTokens: usage.completionTokens,
                     totalTokens: usage.totalTokens,
+                    finishReason: finishReason || "unknown",
                   },
                 })
               }

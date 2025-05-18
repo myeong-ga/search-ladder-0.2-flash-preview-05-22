@@ -100,12 +100,6 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
 
   const messages_length = chat?.messages ? chat.messages.length : 0
 
-  const getSelectedModelName = () => {
-    if (!provider) return undefined
-    const selectedModel = provider.models.find((m) => m.isDefault)
-    return selectedModel?.name
-  }
-
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)] mx-auto">
       <div className="flex-1">
@@ -137,19 +131,25 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <ProviderSelector selectedProvider={providerId} onProviderChange={handleProviderChange} />
-              <ModelSelector providerId={providerId} />
+              <ProviderSelector
+                selectedProvider={providerId}
+                onProviderChange={handleProviderChange}
+                disabled={chat?.status === "streaming" || chat?.status === "submitted"}
+              />
+              <ModelSelector
+                providerId={providerId}
+                disabled={chat?.status === "streaming" || chat?.status === "submitted"}
+              />
             </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-19rem)]"
-         >
+          <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-19rem)]">
             <div className="relative space-y-4">
-              <div className="sticky top-0 left-0 right-0  h-1 z-9 backdrop-blur-[8px]"/>
-              <div className="sticky top-1 left-0 right-0  h-1 z-9 backdrop-blur-[4px]"/>
-              <div className="sticky top-2 left-0 right-0  h-2 z-9 backdrop-blur-[2px]"/>
-              <div className="sticky top-4 left-0 right-0  h-2 z-9 backdrop-blur-[1px]"/>
+              <div className="sticky top-0 left-0 right-0  h-1 m-0 z-9 backdrop-blur-[8px]" />
+              <div className="sticky top-1 left-0 right-0  h-1 m-0 z-9 backdrop-blur-[4px]" />
+              <div className="sticky top-2 left-0 right-0  h-2 m-0 z-9 backdrop-blur-[2px]" />
+              <div className="sticky top-4 left-0 right-0  h-2 m-0 z-9 backdrop-blur-[1px]" />
 
-              <div className="flex flex-col">
+              <div className="">
                 {chat?.messages.map((message: Message, index) => (
                   <ChatMessageSingle
                     key={message.id}
@@ -162,20 +162,16 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
               </div>
 
               {chat?.sources && chat.sources.length > 0 && <SourcesList sources={chat.sources} />}
-              {(providerId === "gemini" || providerId === "anthropic") &&
-                chat?.searchSuggestions &&
-                chat.searchSuggestions.length > 0 && (
-                  <SearchSuggestions
-                    suggestions={chat.searchSuggestions}
-                    reasoning={chat.searchSuggestionsReasoning}
-                    confidence={chat.searchSuggestionsConfidence}
-                    onSuggestionClick={handleSearchSuggestionClick}
-                  />
-                )}
-
-              {chat?.tokenUsage && (
-                <TokenUsageDisplay tokenUsage={chat.tokenUsage} modelName={getSelectedModelName()} />
+              {chat?.searchSuggestions && chat.searchSuggestions.length > 0 && (
+                <SearchSuggestions
+                  suggestions={chat.searchSuggestions}
+                  reasoning={chat.searchSuggestionsReasoning}
+                  confidence={chat.searchSuggestionsConfidence}
+                  onSuggestionClick={handleSearchSuggestionClick}
+                />
               )}
+
+              {chat?.tokenUsage && <TokenUsageDisplay tokenUsage={chat.tokenUsage} providerId={providerId} />}
             </div>
           </CardContent>
         </Card>

@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { copyToClipboard } from "@/lib/copy-to-clipboard"
 import { cn } from "@/lib/utils"
+import { stripMarkdown } from "@/lib/strip-markdown"
 
 export interface ChatMessageProps {
   message: Message
@@ -17,8 +18,11 @@ export interface ChatMessageProps {
 export function ChatMessage({ message, status, isLast, className }: ChatMessageProps) {
   const [isCopied, setIsCopied] = useState(false)
 
+  // 마크다운 제거 (어시스턴트 메시지만)
+  const cleanContent = message.role === "assistant" ? stripMarkdown(message.content) : message.content
+
   const handleCopy = async () => {
-    const success = await copyToClipboard(message.content)
+    const success = await copyToClipboard(cleanContent)
     if (success) {
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 2000)
@@ -33,11 +37,11 @@ export function ChatMessage({ message, status, isLast, className }: ChatMessageP
             {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
           </div>
           <div
-            className="px-3 py-2 max-w-[80%] font-mono"
+            className="px-3 py-2 max-w-[88%] font-mono"
             style={{
               whiteSpace: "pre-wrap",
-              fontSize: "12px",
-              lineHeight: "18px",
+              fontSize: "14px",
+              lineHeight: "20px",
               fontWeight: 400,
             }}
           >
@@ -59,15 +63,15 @@ export function ChatMessage({ message, status, isLast, className }: ChatMessageP
         </div>
         <div className="w-full h-full">
           <div
-            className="px-3 py-2 max-w-[80%] font-mono"
+            className="px-3 py-2 max-w-[88%] font-mono"
             style={{
               whiteSpace: "pre-wrap",
-              fontSize: "12px",
-              lineHeight: "18px",
+              fontSize: "14px",
+              lineHeight: "20px",
               fontWeight: 400,
             }}
           >
-            {message.content}
+            {cleanContent}
           </div>
 
           {message.role === "assistant" && status === "ready" && (

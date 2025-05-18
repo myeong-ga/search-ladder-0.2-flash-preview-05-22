@@ -14,9 +14,15 @@ interface ProviderSelectorProps {
   selectedProvider: ProviderType
   onProviderChange: (providerId: ProviderType) => void
   className?: string
+  disabled?: boolean
 }
 
-export function ProviderSelector({ selectedProvider, onProviderChange, className }: ProviderSelectorProps) {
+export function ProviderSelector({
+  selectedProvider,
+  onProviderChange,
+  className,
+  disabled = false,
+}: ProviderSelectorProps) {
   const { providers } = useLlmProvider()
   const [open, setOpen] = useState(false)
 
@@ -46,6 +52,7 @@ export function ProviderSelector({ selectedProvider, onProviderChange, className
           role="combobox"
           aria-expanded={open}
           className={cn("w-full justify-between", className)}
+          disabled={disabled}
         >
           <span className="truncate">{displayName}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

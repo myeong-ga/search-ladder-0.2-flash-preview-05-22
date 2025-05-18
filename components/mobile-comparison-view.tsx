@@ -1,11 +1,16 @@
+"use client"
+
 import { ChatMessage } from "@/components/chat-message"
 import { SourcesList } from "@/components/sources-list"
 import { SearchSuggestions } from "@/components/search-suggestions"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { ProviderType, ChatInterface } from "@/lib/types"
+import type { ProviderType, ChatInterface, Message } from "@/lib/types"
 import { ModelSelector } from "@/components/model-selector"
 import { LikeButton } from "@/components/like-button"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
+import { TokenUsageDisplay } from "@/components/token-usage-display"
 
 interface ProviderProps {
   id: ProviderType
@@ -26,6 +31,9 @@ export function MobileComparisonView({
   secondProvider,
   onSearchSuggestionClick,
 }: MobileComparisonViewProps) {
+  const firstProvider_messages_length = firstProvider.chat?.messages ? firstProvider.chat.messages.length : 0
+  const secondProvider_messages_length = secondProvider.chat?.messages ? secondProvider.chat.messages.length : 0
+
   return (
     <Tabs defaultValue="first" className="w-full h-full">
       <TabsList className="grid w-full grid-cols-2">
@@ -56,80 +64,98 @@ export function MobileComparisonView({
         <div className="flex items-center justify-between">
           <ModelSelector
             providerId={firstProvider.id}
-            className="flex-1 mr-2"
+            className= "flex-1 mr-2"
+            disabled={firstProvider.chat?.status === "streaming" || firstProvider.chat?.status === "submitted"}
           />
           <ModelSelector
             providerId={secondProvider.id}
-            className= "flex-1 mr-2"
+            className="flex-1 mr-2"
+            disabled={secondProvider.chat?.status === "streaming" || secondProvider.chat?.status === "submitted"}
           />
-          <div>
-            <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
-          </div>
-          <div>
-            <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+            
+                  firstProvider.chat?.resetChat()
+             
+                  secondProvider.chat?.resetChat()
+              
+              }}
+             
+              
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              New Chat
+            </Button>
+            <div>
+              <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
+            </div>
+            <div>
+              <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
+            </div>
           </div>
         </div>
       </div>
       <TabsContent value="first" className="mt-2 h-[calc(100vh-20rem)] overflow-y-auto">
         <div className={`space-y-4 ${!firstProvider.isActive ? "opacity-50" : ""}`}>
-          {firstProvider.chat?.messages && firstProvider.chat.messages.length > 0 ? (
-            <div className="divide-y">
-              {firstProvider.chat.messages.map((message: any) => (
-                <ChatMessage key={message.id} message={message} />
-              ))}
-            </div>
-          ) : firstProvider.chat?.status === "streaming" || firstProvider.chat?.status === "submitted" ? (
-            <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-              <div className="h-4 bg-muted rounded w-1/2"></div>
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No response yet</p>
-          )}
+          <div className="flex flex-col">
+            {firstProvider.chat?.messages.map((message: Message, index) => (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                status={firstProvider.chat?.status}
+                isLast={index === firstProvider_messages_length - 1}
+              />
+            ))}
+          </div>
+
           {firstProvider.chat?.sources && firstProvider.chat.sources.length > 0 && (
             <SourcesList sources={firstProvider.chat.sources} />
           )}
-          {(firstProvider.id === "gemini" || firstProvider.id === "anthropic") &&
-            firstProvider.chat?.searchSuggestions &&
-            firstProvider.chat.searchSuggestions.length > 0 && (
-              <SearchSuggestions
-                suggestions={firstProvider.chat.searchSuggestions}
-                reasoning={firstProvider.chat.searchSuggestionsReasoning}
-                confidence={firstProvider.chat.searchSuggestionsConfidence}
-                onSuggestionClick={onSearchSuggestionClick}
-              />
-            )}
+          {firstProvider.chat?.searchSuggestions && firstProvider.chat.searchSuggestions.length > 0 && (
+            <SearchSuggestions
+              suggestions={firstProvider.chat.searchSuggestions}
+              reasoning={firstProvider.chat.searchSuggestionsReasoning}
+              confidence={firstProvider.chat.searchSuggestionsConfidence}
+              onSuggestionClick={onSearchSuggestionClick}
+            />
+          )}
+
+          {firstProvider.chat?.tokenUsage && (
+            <TokenUsageDisplay tokenUsage={firstProvider.chat.tokenUsage} providerId={firstProvider.id} />
+          )}
         </div>
       </TabsContent>
       <TabsContent value="second" className="mt-2 h-[calc(100vh-20rem)] overflow-y-auto">
         <div className={`space-y-4 ${!secondProvider.isActive ? "opacity-50" : ""}`}>
-          {secondProvider.chat?.messages && secondProvider.chat.messages.length > 0 ? (
-            <div className="divide-y">
-              {secondProvider.chat.messages.map((message: any) => (
-                <ChatMessage key={message.id} message={message} />
-              ))}
-            </div>
-          ) : secondProvider.chat?.status === "streaming" || secondProvider.chat?.status === "submitted" ? (
-            <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-              <div className="h-4 bg-muted rounded w-1/2"></div>
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No response yet</p>
-          )}
+          <div className="flex flex-col">
+            {secondProvider.chat?.messages.map((message: Message, index) => (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                status={secondProvider.chat?.status}
+                isLast={index === secondProvider_messages_length - 1}
+              />
+            ))}
+          </div>
+
           {secondProvider.chat?.sources && secondProvider.chat.sources.length > 0 && (
             <SourcesList sources={secondProvider.chat.sources} />
           )}
-          {(secondProvider.id === "gemini" || secondProvider.id === "anthropic") &&
-            secondProvider.chat?.searchSuggestions &&
-            secondProvider.chat.searchSuggestions.length > 0 && (
-              <SearchSuggestions
-                suggestions={secondProvider.chat.searchSuggestions}
-                reasoning={secondProvider.chat.searchSuggestionsReasoning}
-                confidence={secondProvider.chat.searchSuggestionsConfidence}
-                onSuggestionClick={onSearchSuggestionClick}
-              />
-            )}
+          {secondProvider.chat?.searchSuggestions && secondProvider.chat.searchSuggestions.length > 0 && (
+            <SearchSuggestions
+              suggestions={secondProvider.chat.searchSuggestions}
+              reasoning={secondProvider.chat.searchSuggestionsReasoning}
+              confidence={secondProvider.chat.searchSuggestionsConfidence}
+              onSuggestionClick={onSearchSuggestionClick}
+            />
+          )}
+
+          {secondProvider.chat?.tokenUsage && (
+            <TokenUsageDisplay tokenUsage={secondProvider.chat.tokenUsage} providerId={secondProvider.id} />
+          )}
         </div>
       </TabsContent>
     </Tabs>

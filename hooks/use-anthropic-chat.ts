@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
-import type { Source, ChatStatus } from "@/lib/types"
+import type { Source, ChatStatus, TokenUsage } from "@/lib/types"
 import { nanoid } from "@/lib/nanoid"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 import type { SearchSuggestion } from "@/lib/types"
@@ -18,6 +18,7 @@ export function useAnthropicChat() {
   const [error, setError] = useState<string | null>(null)
   const [controller, setController] = useState<AbortController | null>(null)
   const [chatId, setChatId] = useState<string>(() => nanoid())
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
 
   useEffect(() => {
     if (error && messages.length > 0) {
@@ -48,6 +49,7 @@ export function useAnthropicChat() {
     setSearchSuggestions([])
     setSearchSuggestionsReasoning("")
     setSearchSuggestionsConfidence(null)
+    setTokenUsage(null)
     setError(null)
     setChatId(nanoid())
   }, [stop])
@@ -62,6 +64,7 @@ export function useAnthropicChat() {
       setSearchSuggestions([])
       setSearchSuggestionsReasoning("")
       setSearchSuggestionsConfidence(null)
+      setTokenUsage(null)
       setError(null)
 
       const newController = new AbortController()
@@ -153,10 +156,45 @@ export function useAnthropicChat() {
                     }
                     return newMessages
                   })
+                } else if (data.type === "usage" && typeof data.usage === "object") {
+                  const usage = data.usage
+                  setTokenUsage((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          promptTokens: usage.input_tokens || 0,
+                          completionTokens: usage.output_tokens || 0,
+                          totalTokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
+                        }
+                      : {
+                          promptTokens: usage.input_tokens || 0,
+                          completionTokens: usage.output_tokens || 0,
+                          totalTokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
+                          finishReason: "unknown",
+                      },
+                  )
+                
+                } else if (data.type === "stop_reason") {
+                  
+                  setTokenUsage((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          finishReason: data.stop_reason,
+                        }
+                      : {
+                          promptTokens: 0,
+                          completionTokens:  0,
+                          totalTokens:  0,
+                          finishReason: data.stop_reason,
+                      },
+                  )
                 } else if (data.type === "error") {
                   setError(data.error)
                   setStatus("error")
                 }
+
+
               } catch (e) {
                 console.error("Error parsing SSE data:", e)
               }
@@ -194,5 +232,6 @@ export function useAnthropicChat() {
     sendMessage,
     chatId,
     resetChat,
+    tokenUsage
   }
 }

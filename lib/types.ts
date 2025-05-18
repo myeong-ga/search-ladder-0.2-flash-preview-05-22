@@ -55,6 +55,7 @@ export interface TokenUsage {
   promptTokens: number
   completionTokens: number
   totalTokens: number
+  finishReason?: string
 }
 
 export interface ChatInterface {

@@ -1,4 +1,5 @@
 "use client"
+
 import { ApiKeyWarning } from "@/components/api-key-warning"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { SelectResearchModel } from "@/components/select-research-model"
@@ -16,10 +17,10 @@ export default function SearchPage() {
   
   return (
     <DashboardLayout>
-          <div className="container py-1">
-      {isAnyProviderMissing && !isLoading && <ApiKeyWarning missingProviders={missingProviders} />}
-      <SelectResearchModel />
-    </div>
+      <div className="container py-1">
+        {isAnyProviderMissing && !isLoading && <ApiKeyWarning missingProviders={missingProviders} />}
+        <SelectResearchModel />
+      </div>
     </DashboardLayout>
   )
 }

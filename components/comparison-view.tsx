@@ -34,17 +34,6 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
   const firstProvider_messages_length = firstProvider.chat?.messages ? firstProvider.chat.messages.length : 0
   const secondProvider_messages_length = secondProvider.chat?.messages ? secondProvider.chat.messages.length : 0
 
-  const getSelectedModelName = (providerId: ProviderType, modelId?: string) => {
-    if (!modelId) return undefined
-    const provider = providers.find((p) => p.id === providerId)
-    if (!provider) return undefined
-    const model = provider.models.find((m) => m.id === modelId)
-    return model?.name
-  }
-
-  const firstProviderModelId = providers.find((p) => p.id === firstProvider.id)?.models.find((m) => m.isDefault)?.id
-  const secondProviderModelId = providers.find((p) => p.id === secondProvider.id)?.models.find((m) => m.isDefault)?.id
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
       <Card className={`h-full flex flex-col ${!firstProvider.isActive ? "opacity-50" : ""}`}>
@@ -78,7 +67,10 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <Label htmlFor="first-provider-active">Active</Label>
             </div>
           </div>
-          <ModelSelector providerId={firstProvider.id} />
+          <ModelSelector
+            providerId={firstProvider.id}
+            disabled={firstProvider.chat?.status === "streaming" || firstProvider.chat?.status === "submitted"}
+          />
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
           <div className="space-y-4">
@@ -98,22 +90,17 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <SourcesList sources={firstProvider.chat.sources} />
             )}
 
-            {(firstProvider.id === "gemini" || firstProvider.id === "anthropic") &&
-              firstProvider.chat?.searchSuggestions &&
-              firstProvider.chat.searchSuggestions.length > 0 && (
-                <SearchSuggestions
-                  suggestions={firstProvider.chat.searchSuggestions}
-                  reasoning={firstProvider.chat.searchSuggestionsReasoning}
-                  confidence={firstProvider.chat.searchSuggestionsConfidence}
-                  onSuggestionClick={onSearchSuggestionClick}
-                />
-              )}
+            {firstProvider.chat?.searchSuggestions && firstProvider.chat.searchSuggestions.length > 0 && (
+              <SearchSuggestions
+                suggestions={firstProvider.chat.searchSuggestions}
+                reasoning={firstProvider.chat.searchSuggestionsReasoning}
+                confidence={firstProvider.chat.searchSuggestionsConfidence}
+                onSuggestionClick={onSearchSuggestionClick}
+              />
+            )}
 
             {firstProvider.chat?.tokenUsage && (
-              <TokenUsageDisplay
-                tokenUsage={firstProvider.chat.tokenUsage}
-                modelName={getSelectedModelName(firstProvider.id, firstProviderModelId)}
-              />
+              <TokenUsageDisplay tokenUsage={firstProvider.chat.tokenUsage} providerId={firstProvider.id} />
             )}
           </div>
         </CardContent>
@@ -150,7 +137,10 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <Label htmlFor="second-provider-active">Active</Label>
             </div>
           </div>
-          <ModelSelector providerId={secondProvider.id} />
+          <ModelSelector
+            providerId={secondProvider.id}
+            disabled={secondProvider.chat?.status === "streaming" || secondProvider.chat?.status === "submitted"}
+          />
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
           <div className="space-y-4">
@@ -169,22 +159,17 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <SourcesList sources={secondProvider.chat.sources} />
             )}
 
-            {(secondProvider.id === "gemini" || secondProvider.id === "anthropic") &&
-              secondProvider.chat?.searchSuggestions &&
-              secondProvider.chat.searchSuggestions.length > 0 && (
-                <SearchSuggestions
-                  suggestions={secondProvider.chat.searchSuggestions}
-                  reasoning={secondProvider.chat.searchSuggestionsReasoning}
-                  confidence={secondProvider.chat.searchSuggestionsConfidence}
-                  onSuggestionClick={onSearchSuggestionClick}
-                />
-              )}
+            {secondProvider.chat?.searchSuggestions && secondProvider.chat.searchSuggestions.length > 0 && (
+              <SearchSuggestions
+                suggestions={secondProvider.chat.searchSuggestions}
+                reasoning={secondProvider.chat.searchSuggestionsReasoning}
+                confidence={secondProvider.chat.searchSuggestionsConfidence}
+                onSuggestionClick={onSearchSuggestionClick}
+              />
+            )}
 
             {secondProvider.chat?.tokenUsage && (
-              <TokenUsageDisplay
-                tokenUsage={secondProvider.chat.tokenUsage}
-                modelName={getSelectedModelName(secondProvider.id, secondProviderModelId)}
-              />
+              <TokenUsageDisplay tokenUsage={secondProvider.chat.tokenUsage} providerId={secondProvider.id} />
             )}
           </div>
         </CardContent>

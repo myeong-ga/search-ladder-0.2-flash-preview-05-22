@@ -13,9 +13,10 @@ import { toast } from "sonner"
 interface ModelSelectorProps {
   providerId: ProviderType
   className?: string
+  disabled?: boolean
 }
 
-export function ModelSelector({ providerId, className }: ModelSelectorProps) {
+export function ModelSelector({ providerId, className, disabled = false }: ModelSelectorProps) {
   const { providers, getSelectedModel, updateSelectedModel } = useLlmProvider()
   const [open, setOpen] = useState(false)
   const [selectedModelId, setSelectedModelId] = useState<string>("")
@@ -56,8 +57,8 @@ export function ModelSelector({ providerId, className }: ModelSelectorProps) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-[100%] justify-between", className)}
-          disabled={!provider.isAvailable}
+          className={cn("w-full justify-between", className)}
+          disabled={disabled || !provider.isAvailable}
         >
           <span className="truncate">{displayName}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

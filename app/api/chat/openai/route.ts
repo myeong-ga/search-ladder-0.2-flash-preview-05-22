@@ -1,11 +1,44 @@
 import { openai } from "@ai-sdk/openai"
 import { createDataStreamResponse, streamText } from "ai"
 import type { NextRequest } from "next/server"
-import { OPENAI_SYSTEM_PROMPT } from "@/lib/system-prompt"
+import { OPENAI_SEARCH_SUGGESTIONS_PROMPT, OPENAI_SYSTEM_PROMPT } from "@/lib/system-prompt"
 import type { ModelMessage } from "@/lib/types"
 
 export const runtime = "nodejs"
+function extractSearchSuggestionsFromText(
+  text: string,
+): { searchTerms: string[]; confidence: number; reasoning: string } | null {
+  try {
+    const regex = /```SEARCH_TERMS_JSON\s*({[\s\S]*?})\s*```/
+    const match = text.match(regex)
 
+    if (match && match[1]) {
+      const jsonStr = match[1].trim()
+      const searchSuggestions = JSON.parse(jsonStr)
+
+      if (
+        searchSuggestions &&
+        Array.isArray(searchSuggestions.searchTerms) &&
+        typeof searchSuggestions.confidence === "number" &&
+        typeof searchSuggestions.reasoning === "string"
+      ) {
+        return {
+          searchTerms: searchSuggestions.searchTerms,
+          confidence: searchSuggestions.confidence,
+          reasoning: searchSuggestions.reasoning,
+        }
+      }
+    }
+    return null
+  } catch (error) {
+    console.error("Error extracting search suggestions:", error)
+    return null
+  }
+}
+function removeSearchTermsJson(text: string): string {
+  const pattern = /```SEARCH_TERMS_JSON\s*({[\s\S]*?})\s*```/g
+  return text.replace(pattern, "").trim()
+}
 function validateMessages(messages: any[]): ModelMessage[] {
   return messages
     .filter((message) => {
@@ -54,28 +87,36 @@ export async function POST(req: NextRequest) {
     const validatedMessages = validateMessages(body.messages)
 
     return createDataStreamResponse({
+      
       execute: async (dataStream) => {
         console.log("Starting OpenAI stream execution with model:", selectedModel)
-
+        let fullText = ""
         const result = streamText({
-          model: openai(selectedModel),
+          model: openai.responses(selectedModel),
           messages: validatedMessages,
-          system: OPENAI_SYSTEM_PROMPT,
-          temperature: 0.4,
-          maxTokens: 4000,
+          system: OPENAI_SEARCH_SUGGESTIONS_PROMPT,
+          temperature: 0.2,
+          topP: 0.8,
+          maxTokens: 2048,
+          providerOptions: {
+            openai: {
+              reasoningSummary: 'auto', // 'auto' for condensed or 'detailed' for comprehensive
+            },
+          },
           tools: {
             web_search_preview: openai.tools.webSearchPreview({
-              searchContextSize: "high",
+              searchContextSize: "medium",
             }),
           },
-          // toolChoice: { type: 'tool', toolName: 'web_search_preview' },
-         maxSteps: 5,
+          toolChoice: { type: 'tool', toolName: 'web_search_preview' },
+          maxSteps: 5,
           onChunk: ({ chunk }) => {
             if (chunk.type === "text-delta") {
+              fullText += chunk.textDelta
               dataStream.writeData({ type: "text-delta", text: chunk.textDelta })
             }
           },
-          onFinish: ({ text, sources , usage }) => {
+          onFinish: ({ reasoning , sources , usage, finishReason }) => {
             //console.log("OpenAI sources:", sources)
             if (sources && sources.length > 0) {
               const formattedSources = sources
@@ -90,6 +131,22 @@ export async function POST(req: NextRequest) {
                 dataStream.writeData({ type: "sources", sources: formattedSources })
               }
             }
+            const searchSuggestions = extractSearchSuggestionsFromText(fullText)
+              if (searchSuggestions) {
+                dataStream.writeData({
+                  type: "searchSuggestions",
+                  searchSuggestions: searchSuggestions.searchTerms,
+                  confidence: searchSuggestions.confidence,
+                  reasoning: searchSuggestions.reasoning,
+                })
+              }
+              const cleanedText = removeSearchTermsJson(fullText)
+              dataStream.writeData({
+                type: "cleaned-text",
+                text: cleanedText,
+                messageId: Date.now().toString(),
+              })
+
             if (usage) {
               dataStream.writeData({
                 type: "usage",
@@ -97,8 +154,12 @@ export async function POST(req: NextRequest) {
                   prompt_tokens: usage.promptTokens,
                   completion_tokens: usage.completionTokens,
                   total_tokens: usage.totalTokens,
+                  finishReason: finishReason || "unknown",
                 },
               })
+            }
+            if (reasoning) {
+              console.log("OpenAI reasoning:", reasoning )
             }
           },
         })
