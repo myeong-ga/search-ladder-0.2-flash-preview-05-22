@@ -2,7 +2,8 @@ import { ANTHROPIC_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
 import Anthropic from "@anthropic-ai/sdk"
 import type { ToolUnion } from "@anthropic-ai/sdk/resources/index.mjs"
 import type { NextRequest } from "next/server"
-import type { AnthropicModelMessage } from "@/lib/types"
+import type { AnthropicModelMessage, ModelConfig } from "@/lib/types"
+import { DEFAULT_MODEL_CONFIG } from "@/lib/models"
 
 export const runtime = "nodejs"
 
@@ -101,6 +102,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Get model configuration
+    const modelConfig: ModelConfig = body.modelConfig || DEFAULT_MODEL_CONFIG
+
     // Validate and sanitize messages - filter out system messages
     const validatedMessages = validateMessages(body.messages)
 
@@ -110,7 +114,9 @@ export async function POST(req: NextRequest) {
       content: msg.content,
     }))
 
-    const tools = [{ name: "web_search", type: "web_search_20250305" ,max_uses:1 , cache_control:{"type": "ephemeral"} }] as ToolUnion[]
+    const tools = [
+      { name: "web_search", type: "web_search_20250305", max_uses: 1, cache_control: { type: "ephemeral" } },
+    ] as ToolUnion[]
 
     const encoder = new TextEncoder()
     const readableStream = new ReadableStream({
@@ -118,18 +124,18 @@ export async function POST(req: NextRequest) {
         try {
           const stream = await anthropic.messages.stream({
             model: selectedModel,
-            max_tokens: 2048,
-            temperature: 0.2,
-            top_p: 0.8,
+            max_tokens: modelConfig.maxTokens,
+            temperature: modelConfig.temperature,
+            top_p: modelConfig.topP,
             system: ANTHROPIC_SEARCH_SUGGESTIONS_PROMPT, // Use the search suggestions prompt
             messages: formattedMessages,
             tools,
-
           })
 
           const sources: any[] = []
           let fullText = ""
           console.log("Starting Claude stream execution with model:", selectedModel)
+
           for await (const chunk of stream) {
             if (chunk.type === "content_block_delta") {
               if (chunk.delta.type === "text_delta") {
@@ -167,7 +173,7 @@ export async function POST(req: NextRequest) {
                   type: "stop_reason",
                   stop_reason: chunk.delta.stop_reason,
                 }
-               
+
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
               }
 
@@ -181,7 +187,7 @@ export async function POST(req: NextRequest) {
             }
           }
 
-         console.log("Claude onFinish called")
+          console.log("Claude onFinish called")
           if (sources.length > 0) {
             const data = {
               type: "sources",
@@ -210,6 +216,12 @@ export async function POST(req: NextRequest) {
             }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
           }
+
+          const configData = {
+            type: "model-config",
+            config: modelConfig,
+          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(configData)}\n\n`))
 
           controller.close()
         } catch (error) {

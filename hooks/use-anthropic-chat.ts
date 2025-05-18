@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
-import type { Source, ChatStatus, TokenUsage } from "@/lib/types"
+import type { Source, ChatStatus, TokenUsage, ModelConfig } from "@/lib/types"
 import { nanoid } from "@/lib/nanoid"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 import type { SearchSuggestion } from "@/lib/types"
+import { getDefaultModelConfig } from "@/lib/models"
 
 export function useAnthropicChat() {
   const { getSelectedModel } = useLlmProvider()
@@ -19,6 +20,17 @@ export function useAnthropicChat() {
   const [controller, setController] = useState<AbortController | null>(null)
   const [chatId, setChatId] = useState<string>(() => nanoid())
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
+  const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
+    const selectedModelId = getSelectedModel("anthropic")
+    return getDefaultModelConfig(selectedModelId).config
+  })
+
+  // Update model config when selected model changes
+  useEffect(() => {
+    const selectedModelId = getSelectedModel("anthropic")
+    const defaultConfig = getDefaultModelConfig(selectedModelId).config
+    setModelConfig(defaultConfig)
+  }, [getSelectedModel])
 
   useEffect(() => {
     if (error && messages.length > 0) {
@@ -33,6 +45,13 @@ export function useAnthropicChat() {
       }
     }
   }, [controller])
+
+  const updateModelConfig = useCallback((config: Partial<ModelConfig>) => {
+    setModelConfig((prevConfig) => ({
+      ...prevConfig,
+      ...config,
+    }))
+  }, [])
 
   const stop = useCallback(() => {
     if (controller) {
@@ -52,7 +71,11 @@ export function useAnthropicChat() {
     setTokenUsage(null)
     setError(null)
     setChatId(nanoid())
-  }, [stop])
+
+    // Reset model config to default
+    const selectedModelId = getSelectedModel("anthropic")
+    setModelConfig(getDefaultModelConfig(selectedModelId).config)
+  }, [stop, getSelectedModel])
 
   const sendMessage = async (message: string | CreateMessage) => {
     try {
@@ -85,6 +108,7 @@ export function useAnthropicChat() {
           messages: [...messages, userMessage],
           model: getSelectedModel("anthropic"),
           chatId,
+          modelConfig,
         }),
         signal: newController.signal,
       })
@@ -142,6 +166,16 @@ export function useAnthropicChat() {
                   if (data.reasoning && typeof data.reasoning === "string") {
                     setSearchSuggestionsReasoning(data.reasoning)
                   }
+                } else if (data.type === "model-config" && typeof data.config === "object") {
+                  // Handle model config response from server
+                  const config = data.config as ModelConfig
+                  if (
+                    typeof config.temperature === "number" &&
+                    typeof config.topP === "number" &&
+                    typeof config.maxTokens === "number"
+                  ) {
+                    setModelConfig(config)
+                  }
                 } else if (data.type === "cleaned-text" && "text" in data && typeof data.text === "string") {
                   setMessages((prevMessages) => {
                     const newMessages = [...prevMessages]
@@ -171,11 +205,9 @@ export function useAnthropicChat() {
                           completionTokens: usage.output_tokens || 0,
                           totalTokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
                           finishReason: "unknown",
-                      },
+                        },
                   )
-                
                 } else if (data.type === "stop_reason") {
-                  
                   setTokenUsage((prev) =>
                     prev
                       ? {
@@ -184,17 +216,15 @@ export function useAnthropicChat() {
                         }
                       : {
                           promptTokens: 0,
-                          completionTokens:  0,
-                          totalTokens:  0,
+                          completionTokens: 0,
+                          totalTokens: 0,
                           finishReason: data.stop_reason,
-                      },
+                        },
                   )
                 } else if (data.type === "error") {
                   setError(data.error)
                   setStatus("error")
                 }
-
-
               } catch (e) {
                 console.error("Error parsing SSE data:", e)
               }
@@ -232,6 +262,8 @@ export function useAnthropicChat() {
     sendMessage,
     chatId,
     resetChat,
-    tokenUsage
+    tokenUsage,
+    modelConfig,
+    updateModelConfig,
   }
 }

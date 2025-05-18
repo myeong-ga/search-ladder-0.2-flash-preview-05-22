@@ -1,8 +1,9 @@
 import { openai } from "@ai-sdk/openai"
-import { createDataStreamResponse, streamText } from "ai"
+import { createDataStreamResponse, JSONValue, streamText } from "ai"
 import type { NextRequest } from "next/server"
-import { OPENAI_SEARCH_SUGGESTIONS_PROMPT, OPENAI_SYSTEM_PROMPT } from "@/lib/system-prompt"
-import type { ModelMessage } from "@/lib/types"
+import { OPENAI_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
+import type { ModelMessage, ModelConfig } from "@/lib/types"
+import { DEFAULT_MODEL_CONFIG } from "@/lib/models"
 
 export const runtime = "nodejs"
 function extractSearchSuggestionsFromText(
@@ -84,23 +85,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Get model configuration
+    const modelConfig: ModelConfig = body.modelConfig || DEFAULT_MODEL_CONFIG
+
     const validatedMessages = validateMessages(body.messages)
 
     return createDataStreamResponse({
-      
       execute: async (dataStream) => {
         console.log("Starting OpenAI stream execution with model:", selectedModel)
+
         let fullText = ""
         const result = streamText({
           model: openai.responses(selectedModel),
           messages: validatedMessages,
           system: OPENAI_SEARCH_SUGGESTIONS_PROMPT,
-          temperature: 0.2,
-          topP: 0.8,
-          maxTokens: 2048,
+          temperature: modelConfig.temperature,
+          topP: modelConfig.topP,
+          maxTokens: modelConfig.maxTokens,
           providerOptions: {
             openai: {
-              reasoningSummary: 'auto', // 'auto' for condensed or 'detailed' for comprehensive
+              reasoningSummary: "auto", // 'auto' for condensed or 'detailed' for comprehensive
             },
           },
           tools: {
@@ -108,7 +112,7 @@ export async function POST(req: NextRequest) {
               searchContextSize: "medium",
             }),
           },
-          toolChoice: { type: 'tool', toolName: 'web_search_preview' },
+          toolChoice: { type: "tool", toolName: "web_search_preview" },
           maxSteps: 5,
           onChunk: ({ chunk }) => {
             if (chunk.type === "text-delta") {
@@ -116,7 +120,7 @@ export async function POST(req: NextRequest) {
               dataStream.writeData({ type: "text-delta", text: chunk.textDelta })
             }
           },
-          onFinish: ({ reasoning , sources , usage, finishReason }) => {
+          onFinish: ({ reasoning, sources, usage, finishReason }) => {
             //console.log("OpenAI sources:", sources)
             if (sources && sources.length > 0) {
               const formattedSources = sources
@@ -132,20 +136,20 @@ export async function POST(req: NextRequest) {
               }
             }
             const searchSuggestions = extractSearchSuggestionsFromText(fullText)
-              if (searchSuggestions) {
-                dataStream.writeData({
-                  type: "searchSuggestions",
-                  searchSuggestions: searchSuggestions.searchTerms,
-                  confidence: searchSuggestions.confidence,
-                  reasoning: searchSuggestions.reasoning,
-                })
-              }
-              const cleanedText = removeSearchTermsJson(fullText)
+            if (searchSuggestions) {
               dataStream.writeData({
-                type: "cleaned-text",
-                text: cleanedText,
-                messageId: Date.now().toString(),
+                type: "searchSuggestions",
+                searchSuggestions: searchSuggestions.searchTerms,
+                confidence: searchSuggestions.confidence,
+                reasoning: searchSuggestions.reasoning,
               })
+            }
+            const cleanedText = removeSearchTermsJson(fullText)
+            dataStream.writeData({
+              type: "cleaned-text",
+              text: cleanedText,
+              messageId: Date.now().toString(),
+            })
 
             if (usage) {
               dataStream.writeData({
@@ -159,8 +163,12 @@ export async function POST(req: NextRequest) {
               })
             }
             if (reasoning) {
-              console.log("OpenAI reasoning:", reasoning )
+              console.log("OpenAI reasoning:", reasoning)
             }
+            dataStream.writeData({
+              type: "model-config",
+              config: modelConfig,
+            } as unknown as JSONValue)
           },
         })
 

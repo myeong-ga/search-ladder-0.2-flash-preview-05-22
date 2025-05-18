@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
-import type { Source, TokenUsage } from "@/lib/types"
+import type { Source, TokenUsage, ModelConfig } from "@/lib/types"
 import { nanoid } from "@/lib/nanoid"
 import type { SearchSuggestion } from "@/lib/types"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
+import { getDefaultModelConfig } from "@/lib/models"
 
 export function useGeminiChat() {
   const { getSelectedModel } = useLlmProvider()
@@ -17,6 +18,10 @@ export function useGeminiChat() {
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
   const [chatId, setChatId] = useState<string>(() => nanoid())
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
+  const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
+    const selectedModelId = getSelectedModel("gemini")
+    return getDefaultModelConfig(selectedModelId).config
+  })
 
   const {
     messages: chatMessages,
@@ -32,8 +37,16 @@ export function useGeminiChat() {
     experimental_throttle: 50,
     body: {
       model: getSelectedModel("gemini"),
+      modelConfig,
     },
   })
+
+  // Update model config when selected model changes
+  useEffect(() => {
+    const selectedModelId = getSelectedModel("gemini")
+    const defaultConfig = getDefaultModelConfig(selectedModelId).config
+    setModelConfig(defaultConfig)
+  }, [getSelectedModel])
 
   const messages = [
     ...optimisticMessages,
@@ -81,6 +94,16 @@ export function useGeminiChat() {
                 finishReason: usage.finishReason || "unknown",
               })
             }
+          } else if (item.type === "model-config" && typeof item.config === "object") {
+            // Handle model config response from server
+            const config = item.config as unknown as ModelConfig
+            if (
+              typeof config.temperature === "number" &&
+              typeof config.topP === "number" &&
+              typeof config.maxTokens === "number"
+            ) {
+              setModelConfig(config)
+            }
           } else if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
             setMessages((prevMessages) => {
               const newMessages = [...prevMessages]
@@ -101,6 +124,13 @@ export function useGeminiChat() {
     }
   }, [data, setMessages])
 
+  const updateModelConfig = useCallback((config: Partial<ModelConfig>) => {
+    setModelConfig((prevConfig) => ({
+      ...prevConfig,
+      ...config,
+    }))
+  }, [])
+
   const sendMessage = async (message: string | CreateMessage) => {
     setSources([])
     setSearchSuggestions([])
@@ -118,6 +148,7 @@ export function useGeminiChat() {
     await append(userMessage, {
       body: {
         model: getSelectedModel("gemini"),
+        modelConfig,
       },
     })
   }
@@ -131,7 +162,11 @@ export function useGeminiChat() {
     setMessages([])
     setChatId(nanoid())
     setTokenUsage(null)
-  }, [setMessages])
+
+    // Reset model config to default
+    const selectedModelId = getSelectedModel("gemini")
+    setModelConfig(getDefaultModelConfig(selectedModelId).config)
+  }, [setMessages, getSelectedModel])
 
   return {
     messages,
@@ -145,5 +180,7 @@ export function useGeminiChat() {
     sendMessage,
     chatId,
     resetChat,
+    modelConfig,
+    updateModelConfig,
   }
 }

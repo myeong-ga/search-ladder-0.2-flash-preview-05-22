@@ -1,8 +1,9 @@
 import { google } from "@ai-sdk/google"
-import { createDataStreamResponse, streamText } from "ai"
+import { createDataStreamResponse, JSONValue, streamText } from "ai"
 import type { NextRequest } from "next/server"
 import { GOOGLE_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
-import type { ModelMessage } from "@/lib/types"
+import type { ModelMessage, ModelConfig } from "@/lib/types"
+import { DEFAULT_MODEL_CONFIG } from "@/lib/models"
 
 interface GoogleGroundingMetadata {
   searchEntryPoint?: {
@@ -123,6 +124,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Get model configuration
+    const modelConfig: ModelConfig = body.modelConfig || DEFAULT_MODEL_CONFIG
+
     // Validate and sanitize messages
     const validatedMessages = validateMessages(body.messages)
 
@@ -138,9 +142,9 @@ export async function POST(req: NextRequest) {
           }),
           messages: validatedMessages,
           system: GOOGLE_SEARCH_SUGGESTIONS_PROMPT,
-          temperature: 0.4,
-          topP: 0.8,
-          maxTokens: 8192,
+          temperature: modelConfig.temperature,
+          topP: modelConfig.topP,
+          maxTokens: modelConfig.maxTokens,
           onChunk: ({ chunk }) => {
             if (chunk.type === "text-delta") {
               fullText += chunk.textDelta
@@ -151,7 +155,7 @@ export async function POST(req: NextRequest) {
               })
             }
           },
-          onFinish: ({ text, providerMetadata ,usage, finishReason }) => {
+          onFinish: ({ text, providerMetadata, usage, finishReason }) => {
             console.log("Gemini onFinish called")
 
             try {
@@ -209,7 +213,7 @@ export async function POST(req: NextRequest) {
                   reasoning: searchSuggestions.reasoning,
                 })
               }
-              
+
               const cleanedText = removeSearchTermsJson(fullText)
               dataStream.writeData({
                 type: "cleaned-text",
@@ -228,6 +232,12 @@ export async function POST(req: NextRequest) {
                   },
                 })
               }
+
+              dataStream.writeData({
+                type: "model-config",
+                config: modelConfig,
+              } as unknown as JSONValue)
+
             } catch (error) {
               console.error("Error processing metadata in onFinish:", error)
             }

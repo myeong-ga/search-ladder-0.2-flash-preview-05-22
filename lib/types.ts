@@ -1,5 +1,3 @@
-import type { CreateMessage } from "@ai-sdk/react"
-
 export type Source = {
   url: string
   title: string
@@ -31,7 +29,6 @@ export interface AnthropicModelMessage {
   content: string
 }
 
-
 export type ProviderType = "gemini" | "openai" | "anthropic"
 
 export interface ModelInfo {
@@ -58,6 +55,11 @@ export interface TokenUsage {
   finishReason?: string
 }
 
+export interface CreateMessage {
+  role: "user" | "assistant" | "system"
+  content: string
+}
+
 export interface ChatInterface {
   messages: Message[]
   status: ChatStatus
@@ -70,4 +72,19 @@ export interface ChatInterface {
   chatId: string
   resetChat: () => void
   tokenUsage?: TokenUsage | null
+  modelConfig: ModelConfig
+  updateModelConfig: (config: Partial<ModelConfig>) => void
+}
+
+export interface ModelConfig {
+  temperature: number
+  topP: number
+  maxTokens: number
+}
+
+export interface ModelConfigInfo {
+  id: string
+  name: string
+  description: string
+  config: ModelConfig
 }

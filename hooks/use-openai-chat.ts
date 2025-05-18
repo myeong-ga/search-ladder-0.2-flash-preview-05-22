@@ -3,19 +3,24 @@
 import { useState, useEffect, useCallback } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
-import type { SearchSuggestion, Source , TokenUsage} from "@/lib/types"
+import type { SearchSuggestion, Source, TokenUsage, ModelConfig } from "@/lib/types"
 import { nanoid } from "@/lib/nanoid"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
+import { getDefaultModelConfig } from "@/lib/models"
 
 export function useOpenAIChat() {
   const { getSelectedModel } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
-    const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
-    const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
-    const [searchSuggestionsConfidence, setSearchSuggestionsConfidence] = useState<number | null>(null)
+  const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
+  const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
+  const [searchSuggestionsConfidence, setSearchSuggestionsConfidence] = useState<number | null>(null)
   const [chatId, setChatId] = useState<string>(() => nanoid())
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
+  const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
+    const selectedModelId = getSelectedModel("openai")
+    return getDefaultModelConfig(selectedModelId).config
+  })
 
   const {
     messages: chatMessages,
@@ -31,8 +36,16 @@ export function useOpenAIChat() {
     experimental_throttle: 50,
     body: {
       model: getSelectedModel("openai"),
+      modelConfig,
     },
   })
+
+  // Update model config when selected model changes
+  useEffect(() => {
+    const selectedModelId = getSelectedModel("openai")
+    const defaultConfig = getDefaultModelConfig(selectedModelId).config
+    setModelConfig(defaultConfig)
+  }, [getSelectedModel])
 
   const messages = [
     ...optimisticMessages,
@@ -50,55 +63,72 @@ export function useOpenAIChat() {
   useEffect(() => {
     if (data && Array.isArray(data)) {
       for (const item of data) {
-         if (item && typeof item === "object" && "type" in item) {
-            if (item.type === "sources" && "sources" in item && Array.isArray(item.sources)) {
-              setSources(item.sources as Source[])
-            } else if (item.type === "usage" && typeof item.usage === "object") {
-                const usage = item.usage as any
-                if (
-                  typeof usage.prompt_tokens === "number" &&
-                  typeof usage.completion_tokens === "number" &&
-                  typeof usage.total_tokens === "number"
-                ) {
-                  setTokenUsage({
-                    promptTokens: usage.prompt_tokens,
-                    completionTokens: usage.completion_tokens,
-                    totalTokens: usage.total_tokens,
-                    finishReason: usage.finishReason || "unknown",
-                  })
-                }
-            } else if (item.type === "searchSuggestions") {
-                        if ("searchSuggestions" in item && Array.isArray(item.searchSuggestions)) {
-                          const suggestions = item.searchSuggestions.map((term) => ({ term }))
-                          setSearchSuggestions(suggestions as SearchSuggestion[])
-            
-                          if ("confidence" in item && typeof item.confidence === "number") {
-                            setSearchSuggestionsConfidence(item.confidence)
-                          }
-            
-                          if ("reasoning" in item && typeof item.reasoning === "string") {
-                            setSearchSuggestionsReasoning(item.reasoning)
-                          }
-                        }
-            } else if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
-              setMessages((prevMessages) => {
-                const newMessages = [...prevMessages]
-                for (let i = newMessages.length - 1; i >= 0; i--) {
-                  if (newMessages[i].role === "assistant") {
-                    newMessages[i] = {
-                      ...newMessages[i],
-                      content: item.text as string,
-                    }
-                    break
-                  }
-                }
-                return newMessages
+        if (item && typeof item === "object" && "type" in item) {
+          if (item.type === "sources" && "sources" in item && Array.isArray(item.sources)) {
+            setSources(item.sources as Source[])
+          } else if (item.type === "usage" && typeof item.usage === "object") {
+            const usage = item.usage as any
+            if (
+              typeof usage.prompt_tokens === "number" &&
+              typeof usage.completion_tokens === "number" &&
+              typeof usage.total_tokens === "number"
+            ) {
+              setTokenUsage({
+                promptTokens: usage.prompt_tokens,
+                completionTokens: usage.completion_tokens,
+                totalTokens: usage.total_tokens,
+                finishReason: usage.finishReason || "unknown",
               })
             }
+          } else if (item.type === "model-config" && typeof item.config === "object") {
+            // Handle model config response from server
+            const config = item.config as unknown as ModelConfig
+            if (
+              typeof config.temperature === "number" &&
+              typeof config.topP === "number" &&
+              typeof config.maxTokens === "number"
+            ) {
+              setModelConfig(config)
+            }
+          } else if (item.type === "searchSuggestions") {
+            if ("searchSuggestions" in item && Array.isArray(item.searchSuggestions)) {
+              const suggestions = item.searchSuggestions.map((term) => ({ term }))
+              setSearchSuggestions(suggestions as SearchSuggestion[])
+
+              if ("confidence" in item && typeof item.confidence === "number") {
+                setSearchSuggestionsConfidence(item.confidence)
+              }
+
+              if ("reasoning" in item && typeof item.reasoning === "string") {
+                setSearchSuggestionsReasoning(item.reasoning)
+              }
+            }
+          } else if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
+            setMessages((prevMessages) => {
+              const newMessages = [...prevMessages]
+              for (let i = newMessages.length - 1; i >= 0; i--) {
+                if (newMessages[i].role === "assistant") {
+                  newMessages[i] = {
+                    ...newMessages[i],
+                    content: item.text as string,
+                  }
+                  break
+                }
+              }
+              return newMessages
+            })
           }
+        }
       }
     }
-  }, [data])
+  }, [data, setMessages])
+
+  const updateModelConfig = useCallback((config: Partial<ModelConfig>) => {
+    setModelConfig((prevConfig) => ({
+      ...prevConfig,
+      ...config,
+    }))
+  }, [])
 
   const sendMessage = async (message: string | CreateMessage) => {
     setSources([])
@@ -113,6 +143,7 @@ export function useOpenAIChat() {
     await append(userMessage, {
       body: {
         model: getSelectedModel("openai"),
+        modelConfig,
       },
     })
   }
@@ -123,7 +154,11 @@ export function useOpenAIChat() {
     setTokenUsage(null)
     setMessages([])
     setChatId(nanoid())
-  }, [setMessages])
+
+    // Reset model config to default
+    const selectedModelId = getSelectedModel("openai")
+    setModelConfig(getDefaultModelConfig(selectedModelId).config)
+  }, [setMessages, getSelectedModel])
 
   return {
     messages,
@@ -137,5 +172,7 @@ export function useOpenAIChat() {
     sendMessage,
     chatId,
     resetChat,
+    modelConfig,
+    updateModelConfig,
   }
 }

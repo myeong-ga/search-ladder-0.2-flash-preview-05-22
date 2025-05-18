@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button"
 import { RefreshCw } from "lucide-react"
 import type { Message } from "ai"
 import { TokenUsageDisplay } from "@/components/token-usage-display"
+import { ModelConfigDisplay } from "./model-config-display"
+import { ModelConfigBlock } from "./model-config-block"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 
 interface ProviderProps {
@@ -67,10 +69,12 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <Label htmlFor="first-provider-active">Active</Label>
             </div>
           </div>
-          <ModelSelector
-            providerId={firstProvider.id}
-            disabled={firstProvider.chat?.status === "streaming" || firstProvider.chat?.status === "submitted"}
-          />
+          <div className="flex items-center justify-between">
+            <ModelSelector
+              providerId={firstProvider.id}
+              disabled={firstProvider.chat?.status === "streaming" || firstProvider.chat?.status === "submitted"}
+            />
+          </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
           <div className="space-y-4">
@@ -86,11 +90,11 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               ))}
             </div>
 
-            {firstProvider.chat?.sources && firstProvider.chat.sources.length > 0 && (
+            {firstProvider.chat?.sources && firstProvider.chat.sources.length > 0 && (firstProvider.chat?.status==="ready" ) && (
               <SourcesList sources={firstProvider.chat.sources} />
             )}
 
-            {firstProvider.chat?.searchSuggestions && firstProvider.chat.searchSuggestions.length > 0 && (
+            {firstProvider.chat?.searchSuggestions && firstProvider.chat.searchSuggestions.length > 0 && (firstProvider.chat?.status==="ready" ) && (
               <SearchSuggestions
                 suggestions={firstProvider.chat.searchSuggestions}
                 reasoning={firstProvider.chat.searchSuggestionsReasoning}
@@ -99,9 +103,13 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               />
             )}
 
-            {firstProvider.chat?.tokenUsage && (
+            {firstProvider.chat?.tokenUsage && (firstProvider.chat?.status==="ready" ) && (
               <TokenUsageDisplay tokenUsage={firstProvider.chat.tokenUsage} providerId={firstProvider.id} />
             )}
+            {firstProvider.chat?.messages && firstProvider.chat.messages.length > 0 && (firstProvider.chat?.status==="ready" ) && (
+                  <ModelConfigBlock chat={firstProvider.chat}  providerId={firstProvider.id} />
+            )}
+           
           </div>
         </CardContent>
       </Card>
@@ -137,10 +145,12 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <Label htmlFor="second-provider-active">Active</Label>
             </div>
           </div>
-          <ModelSelector
-            providerId={secondProvider.id}
-            disabled={secondProvider.chat?.status === "streaming" || secondProvider.chat?.status === "submitted"}
-          />
+          <div className="flex items-center justify-between">
+            <ModelSelector
+              providerId={secondProvider.id}
+              disabled={secondProvider.chat?.status === "streaming" || secondProvider.chat?.status === "submitted"}
+            />
+          </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-24rem)]">
           <div className="space-y-4">
@@ -155,11 +165,11 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               ))}
             </div>
 
-            {secondProvider.chat?.sources && secondProvider.chat.sources.length > 0 && (
+            {secondProvider.chat?.sources && secondProvider.chat.sources.length > 0 && (secondProvider.chat?.status==="ready" ) &&(
               <SourcesList sources={secondProvider.chat.sources} />
             )}
 
-            {secondProvider.chat?.searchSuggestions && secondProvider.chat.searchSuggestions.length > 0 && (
+            {secondProvider.chat?.searchSuggestions && secondProvider.chat.searchSuggestions.length > 0 && (secondProvider.chat?.status==="ready" ) &&(
               <SearchSuggestions
                 suggestions={secondProvider.chat.searchSuggestions}
                 reasoning={secondProvider.chat.searchSuggestionsReasoning}
@@ -168,9 +178,13 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               />
             )}
 
-            {secondProvider.chat?.tokenUsage && (
+            {secondProvider.chat?.tokenUsage && (secondProvider.chat?.status==="ready" ) &&(
               <TokenUsageDisplay tokenUsage={secondProvider.chat.tokenUsage} providerId={secondProvider.id} />
             )}
+            {secondProvider.chat?.messages && secondProvider.chat.messages.length > 0 && (secondProvider.chat?.status==="ready" ) && (
+                  <ModelConfigBlock chat={secondProvider.chat} providerId={secondProvider.id}/>
+            )}
+           
           </div>
         </CardContent>
       </Card>

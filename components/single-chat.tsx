@@ -12,7 +12,7 @@ import { ModelSelector } from "@/components/model-selector"
 import { ProviderSelector } from "@/components/provider-selector"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import type { ProviderType, ChatInterface, Message } from "@/lib/types"
+import type { ProviderType, ChatInterface, Message, ModelConfig } from "@/lib/types"
 import { useGeminiChat } from "@/hooks/use-gemini-chat"
 import { useOpenAIChat } from "@/hooks/use-openai-chat"
 import { useAnthropicChat } from "@/hooks/use-anthropic-chat"
@@ -20,6 +20,9 @@ import { useLlmProvider } from "@/contexts/llm-provider-context"
 import { LikeButton } from "@/components/like-button"
 import { ChatMessageSingle } from "./chat-message-single"
 import { TokenUsageDisplay } from "./token-usage-display"
+import { ModelConfigDisplay } from "./model-config-display"
+import { ModelConfigBlock } from "./model-config-block"
+import { ModelConfigDialog } from "./model-config-dialog"
 
 interface SingleChatProps {
   initialProviderId?: ProviderType
@@ -75,6 +78,14 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
     setProviderId(newProviderId)
   }
 
+
+  const handleConfigChange = (config: ModelConfig) => {
+    if (chat?.updateModelConfig) {
+      chat.updateModelConfig(config)
+    }
+  }
+
+  
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
 
@@ -111,6 +122,17 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
                 <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
               </div>
               <div className="flex items-center space-x-2">
+                {chat?.modelConfig && (
+                  <div className="flex items-center gap-1">
+                    <ModelConfigDisplay config={chat.modelConfig} />
+                    <ModelConfigDialog
+                      config={chat.modelConfig}
+                      onConfigChange={handleConfigChange}
+                      disabled={isLoading}
+                    />
+
+                  </div>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -161,8 +183,8 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
                 ))}
               </div>
 
-              {chat?.sources && chat.sources.length > 0 && <SourcesList sources={chat.sources} />}
-              {chat?.searchSuggestions && chat.searchSuggestions.length > 0 && (
+              {chat?.sources && chat.sources.length > 0 &&  (chat?.status==="ready" ) &&  <SourcesList sources={chat.sources} />}
+              {chat?.searchSuggestions && chat.searchSuggestions.length > 0 &&  (chat?.status==="ready" ) && (
                 <SearchSuggestions
                   suggestions={chat.searchSuggestions}
                   reasoning={chat.searchSuggestionsReasoning}
@@ -171,7 +193,12 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
                 />
               )}
 
-              {chat?.tokenUsage && <TokenUsageDisplay tokenUsage={chat.tokenUsage} providerId={providerId} />}
+              {chat?.tokenUsage &&  (chat?.status==="ready" ) && <TokenUsageDisplay tokenUsage={chat.tokenUsage} providerId={providerId} />}
+
+              {chat?.messages && chat.messages.length > 0 && (chat?.status==="ready" ) && (
+                 <ModelConfigBlock chat={chat} providerId={providerId}/>
+              )}
+             
             </div>
           </CardContent>
         </Card>
