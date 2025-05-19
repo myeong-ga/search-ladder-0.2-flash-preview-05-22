@@ -73,7 +73,8 @@ export interface ChatInterface {
   resetChat: () => void
   tokenUsage?: TokenUsage | null
   modelConfig: ModelConfig
-  updateModelConfig: (config: Partial<ModelConfig>) => void
+  uiModelConfig: ModelConfig | null
+  updateModelConfig: (config: Partial<ModelConfig>, showToast?: boolean) => void
 }
 
 export interface ModelConfig {

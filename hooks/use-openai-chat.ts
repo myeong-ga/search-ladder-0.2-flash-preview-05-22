@@ -7,6 +7,7 @@ import type { SearchSuggestion, Source, TokenUsage, ModelConfig } from "@/lib/ty
 import { nanoid } from "@/lib/nanoid"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 import { getDefaultModelConfig } from "@/lib/models"
+import { toast } from "sonner"
 
 export function useOpenAIChat() {
   const { getSelectedModel } = useLlmProvider()
@@ -21,6 +22,7 @@ export function useOpenAIChat() {
     const selectedModelId = getSelectedModel("openai")
     return getDefaultModelConfig(selectedModelId).config
   })
+  const [uiModelConfig, setUiModelConfig] = useState<ModelConfig | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
 
   const {
     messages: chatMessages,
@@ -88,7 +90,7 @@ export function useOpenAIChat() {
               typeof config.topP === "number" &&
               typeof config.maxTokens === "number"
             ) {
-              setModelConfig(config)
+              setUiModelConfig(config)
             }
           } else if (item.type === "searchSuggestions") {
             if ("searchSuggestions" in item && Array.isArray(item.searchSuggestions)) {
@@ -123,16 +125,28 @@ export function useOpenAIChat() {
     }
   }, [data, setMessages])
 
-  const updateModelConfig = useCallback((config: Partial<ModelConfig>) => {
-    setModelConfig((prevConfig) => ({
-      ...prevConfig,
-      ...config,
-    }))
+  const updateModelConfig = useCallback((config: Partial<ModelConfig>, showToast = false) => {
+    setModelConfig((prevConfig) => {
+      const newConfig = {
+        ...prevConfig,
+        ...config,
+      }
+
+      if (showToast) {
+        toast.success("Model configuration updated", {
+          description: `Temperature: ${newConfig.temperature.toFixed(2)}, Top P: ${newConfig.topP.toFixed(2)}, Max Tokens: ${newConfig.maxTokens}`,
+          duration: 3000,
+        })
+      }
+
+      return newConfig
+    })
   }, [])
 
   const sendMessage = async (message: string | CreateMessage) => {
     setSources([])
     setTokenUsage(null)
+    setUiModelConfig(null)
     const userMessage =
       typeof message === "string"
         ? ({ role: "user", content: message, id: nanoid() } as Message)
@@ -152,6 +166,7 @@ export function useOpenAIChat() {
     setOptimisticMessages([])
     setSources([])
     setTokenUsage(null)
+    setUiModelConfig(null)
     setMessages([])
     setChatId(nanoid())
 
@@ -173,6 +188,7 @@ export function useOpenAIChat() {
     chatId,
     resetChat,
     modelConfig,
+    uiModelConfig,
     updateModelConfig,
   }
 }

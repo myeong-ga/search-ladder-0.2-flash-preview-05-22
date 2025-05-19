@@ -7,15 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
-
+import { Input } from "@/components/ui/input"
 import { Settings } from "lucide-react"
 import type { ModelConfig } from "@/lib/types"
 import { DEFAULT_MODEL_CONFIG } from "@/lib/models"
-import { Input } from "./ui/model-input"
 
 interface ModelConfigDialogProps {
   config: ModelConfig
-  onConfigChange: (config: ModelConfig) => void
+  onConfigChange: (config: ModelConfig, showToast?: boolean) => void
   disabled?: boolean
   buttonClassName?: string
 }
@@ -52,12 +51,18 @@ export function ModelConfigDialog({
   }
 
   const handleSave = () => {
-    onConfigChange(localConfig)
+    onConfigChange(localConfig, true)
     setOpen(false)
   }
 
   const handleReset = () => {
-    setLocalConfig(DEFAULT_MODEL_CONFIG)
+    const defaultConfig = {
+      ...DEFAULT_MODEL_CONFIG,
+      temperature: 0.4,
+      topP: 0.95,
+    }
+    setLocalConfig(defaultConfig)
+    onConfigChange(defaultConfig, false)
   }
 
   return (

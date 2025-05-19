@@ -7,6 +7,7 @@ import { nanoid } from "@/lib/nanoid"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 import type { SearchSuggestion } from "@/lib/types"
 import { getDefaultModelConfig } from "@/lib/models"
+import { toast } from "sonner"
 
 export function useAnthropicChat() {
   const { getSelectedModel } = useLlmProvider()
@@ -24,6 +25,7 @@ export function useAnthropicChat() {
     const selectedModelId = getSelectedModel("anthropic")
     return getDefaultModelConfig(selectedModelId).config
   })
+  const [uiModelConfig, setUiModelConfig] = useState<ModelConfig | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
 
   // Update model config when selected model changes
   useEffect(() => {
@@ -46,11 +48,22 @@ export function useAnthropicChat() {
     }
   }, [controller])
 
-  const updateModelConfig = useCallback((config: Partial<ModelConfig>) => {
-    setModelConfig((prevConfig) => ({
-      ...prevConfig,
-      ...config,
-    }))
+  const updateModelConfig = useCallback((config: Partial<ModelConfig>, showToast = false) => {
+    setModelConfig((prevConfig) => {
+      const newConfig = {
+        ...prevConfig,
+        ...config,
+      }
+
+      if (showToast) {
+        toast.success("Model configuration updated", {
+          description: `Temperature: ${newConfig.temperature.toFixed(2)}, Top P: ${newConfig.topP.toFixed(2)}, Max Tokens: ${newConfig.maxTokens}`,
+          duration: 3000,
+        })
+      }
+
+      return newConfig
+    })
   }, [])
 
   const stop = useCallback(() => {
@@ -69,6 +82,7 @@ export function useAnthropicChat() {
     setSearchSuggestionsReasoning("")
     setSearchSuggestionsConfidence(null)
     setTokenUsage(null)
+    setUiModelConfig(null)
     setError(null)
     setChatId(nanoid())
 
@@ -88,6 +102,7 @@ export function useAnthropicChat() {
       setSearchSuggestionsReasoning("")
       setSearchSuggestionsConfidence(null)
       setTokenUsage(null)
+      setUiModelConfig(null)
       setError(null)
 
       const newController = new AbortController()
@@ -174,7 +189,7 @@ export function useAnthropicChat() {
                     typeof config.topP === "number" &&
                     typeof config.maxTokens === "number"
                   ) {
-                    setModelConfig(config)
+                    setUiModelConfig(config)
                   }
                 } else if (data.type === "cleaned-text" && "text" in data && typeof data.text === "string") {
                   setMessages((prevMessages) => {
@@ -264,6 +279,7 @@ export function useAnthropicChat() {
     resetChat,
     tokenUsage,
     modelConfig,
+    uiModelConfig,
     updateModelConfig,
   }
 }

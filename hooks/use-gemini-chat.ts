@@ -8,6 +8,7 @@ import { nanoid } from "@/lib/nanoid"
 import type { SearchSuggestion } from "@/lib/types"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
 import { getDefaultModelConfig } from "@/lib/models"
+import { toast } from "sonner"
 
 export function useGeminiChat() {
   const { getSelectedModel } = useLlmProvider()
@@ -19,9 +20,11 @@ export function useGeminiChat() {
   const [chatId, setChatId] = useState<string>(() => nanoid())
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
   const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
+    // LLM model config
     const selectedModelId = getSelectedModel("gemini")
     return getDefaultModelConfig(selectedModelId).config
   })
+  const [uiModelConfig, setUiModelConfig] = useState<ModelConfig | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
 
   const {
     messages: chatMessages,
@@ -102,7 +105,7 @@ export function useGeminiChat() {
               typeof config.topP === "number" &&
               typeof config.maxTokens === "number"
             ) {
-              setModelConfig(config)
+              setUiModelConfig(config)
             }
           } else if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
             setMessages((prevMessages) => {
@@ -124,11 +127,22 @@ export function useGeminiChat() {
     }
   }, [data, setMessages])
 
-  const updateModelConfig = useCallback((config: Partial<ModelConfig>) => {
-    setModelConfig((prevConfig) => ({
-      ...prevConfig,
-      ...config,
-    }))
+  const updateModelConfig = useCallback((config: Partial<ModelConfig>, showToast = false) => {
+    setModelConfig((prevConfig) => {
+      const newConfig = {
+        ...prevConfig,
+        ...config,
+      }
+
+      if (showToast) {
+        toast.success("Model configuration updated", {
+          description: `Temperature: ${newConfig.temperature.toFixed(2)}, Top P: ${newConfig.topP.toFixed(2)}, Max Tokens: ${newConfig.maxTokens}`,
+          duration: 3000,
+        })
+      }
+
+      return newConfig
+    })
   }, [])
 
   const sendMessage = async (message: string | CreateMessage) => {
@@ -137,6 +151,7 @@ export function useGeminiChat() {
     setSearchSuggestionsReasoning("")
     setSearchSuggestionsConfidence(null)
     setTokenUsage(null)
+    setUiModelConfig(null)
 
     const userMessage =
       typeof message === "string"
@@ -162,6 +177,7 @@ export function useGeminiChat() {
     setMessages([])
     setChatId(nanoid())
     setTokenUsage(null)
+    setUiModelConfig(null)
 
     // Reset model config to default
     const selectedModelId = getSelectedModel("gemini")
@@ -180,7 +196,8 @@ export function useGeminiChat() {
     sendMessage,
     chatId,
     resetChat,
-    modelConfig,
+    modelConfig, // LLM 모델 파라미터
+    uiModelConfig,
     updateModelConfig,
   }
 }

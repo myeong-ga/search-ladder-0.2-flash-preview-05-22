@@ -45,15 +45,15 @@ export function ModelConfigBlock({ chat ,providerId}: ModelConfigBlockProps) {
         <div className="grid grid-cols-3 gap-2 text-sm">
           <div className="flex flex-col">
             <span className="text-muted-foreground">Temperature</span>
-            <span className="font-mono">{chat.modelConfig.temperature.toFixed(2)}</span>
+            <span className="font-mono">{chat.uiModelConfig?.temperature.toFixed(2)}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-muted-foreground">Top P</span>
-            <span className="font-mono">{chat.modelConfig.topP.toFixed(2)}</span>
+            <span className="font-mono">{chat.uiModelConfig?.topP.toFixed(2)}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-muted-foreground">Max Tokens</span>
-            <span className="font-mono">{chat.modelConfig.maxTokens.toLocaleString()}</span>
+            <span className="font-mono">{chat.uiModelConfig?.maxTokens.toLocaleString()}</span>
           </div>
         </div>
       </CardContent>

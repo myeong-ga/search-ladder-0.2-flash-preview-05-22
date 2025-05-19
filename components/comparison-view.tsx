@@ -6,7 +6,7 @@ import { SourcesList } from "@/components/sources-list"
 import { SearchSuggestions } from "@/components/search-suggestions"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import type { ProviderType, ChatInterface } from "@/lib/types"
+import type { ProviderType, ChatInterface, ModelConfig } from "@/lib/types"
 import { ModelSelector } from "@/components/model-selector"
 import { LikeButton } from "@/components/like-button"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import { TokenUsageDisplay } from "@/components/token-usage-display"
 import { ModelConfigDisplay } from "./model-config-display"
 import { ModelConfigBlock } from "./model-config-block"
 import { useLlmProvider } from "@/contexts/llm-provider-context"
+import { ModelConfigDialog } from "./model-config-dialog"
 
 interface ProviderProps {
   id: ProviderType
@@ -36,6 +37,18 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
   const firstProvider_messages_length = firstProvider.chat?.messages ? firstProvider.chat.messages.length : 0
   const secondProvider_messages_length = secondProvider.chat?.messages ? secondProvider.chat.messages.length : 0
 
+  const handleFirstProviderConfigChange = (config: ModelConfig, showToast = false) => {
+    if (firstProvider.chat?.updateModelConfig) {
+      firstProvider.chat.updateModelConfig(config, showToast)
+    }
+  }
+
+  const handleSecondProviderConfigChange = (config: ModelConfig, showToast = false) => {
+    if (secondProvider.chat?.updateModelConfig) {
+      secondProvider.chat.updateModelConfig(config, showToast)
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
       <Card className={`h-full flex flex-col ${!firstProvider.isActive ? "opacity-50" : ""}`}>
@@ -46,6 +59,20 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
             </div>
             <div className="flex items-center space-x-2">
+              {firstProvider.chat?.modelConfig && (
+                <div className="flex items-center gap-1">
+                  <ModelConfigDisplay config={firstProvider.chat.modelConfig} />
+                  <ModelConfigDialog
+                    config={firstProvider.chat.modelConfig}
+                    onConfigChange={handleFirstProviderConfigChange}
+                    disabled={
+                      !firstProvider.isActive ||
+                      firstProvider.chat?.status === "streaming" ||
+                      firstProvider.chat?.status === "submitted"
+                    }
+                  />
+                </div>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -90,26 +117,29 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               ))}
             </div>
 
-            {firstProvider.chat?.sources && firstProvider.chat.sources.length > 0 && (firstProvider.chat?.status==="ready" ) && (
-              <SourcesList sources={firstProvider.chat.sources} />
-            )}
+            {firstProvider.chat?.sources &&
+              firstProvider.chat.sources.length > 0 &&
+              firstProvider.chat?.status === "ready" && <SourcesList sources={firstProvider.chat.sources} />}
 
-            {firstProvider.chat?.searchSuggestions && firstProvider.chat.searchSuggestions.length > 0 && (firstProvider.chat?.status==="ready" ) && (
-              <SearchSuggestions
-                suggestions={firstProvider.chat.searchSuggestions}
-                reasoning={firstProvider.chat.searchSuggestionsReasoning}
-                confidence={firstProvider.chat.searchSuggestionsConfidence}
-                onSuggestionClick={onSearchSuggestionClick}
-              />
-            )}
+            {firstProvider.chat?.searchSuggestions &&
+              firstProvider.chat.searchSuggestions.length > 0 &&
+              firstProvider.chat?.status === "ready" && (
+                <SearchSuggestions
+                  suggestions={firstProvider.chat.searchSuggestions}
+                  reasoning={firstProvider.chat.searchSuggestionsReasoning}
+                  confidence={firstProvider.chat.searchSuggestionsConfidence}
+                  onSuggestionClick={onSearchSuggestionClick}
+                />
+              )}
 
-            {firstProvider.chat?.tokenUsage && (firstProvider.chat?.status==="ready" ) && (
+            {firstProvider.chat?.tokenUsage && firstProvider.chat?.status === "ready" && (
               <TokenUsageDisplay tokenUsage={firstProvider.chat.tokenUsage} providerId={firstProvider.id} />
             )}
-            {firstProvider.chat?.messages && firstProvider.chat.messages.length > 0 && (firstProvider.chat?.status==="ready" ) && (
-                  <ModelConfigBlock chat={firstProvider.chat}  providerId={firstProvider.id} />
-            )}
-           
+            {firstProvider.chat?.messages &&
+              firstProvider.chat.messages.length > 0 &&
+              firstProvider.chat?.status === "ready" && (
+                <ModelConfigBlock chat={firstProvider.chat} providerId={firstProvider.id} />
+              )}
           </div>
         </CardContent>
       </Card>
@@ -122,6 +152,20 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               <LikeButton initialCount={Math.floor(Math.random() * 200) + 100} />
             </div>
             <div className="flex items-center space-x-2">
+              {secondProvider.chat?.modelConfig && (
+                <div className="flex items-center gap-1">
+                  <ModelConfigDisplay config={secondProvider.chat.modelConfig} />
+                  <ModelConfigDialog
+                    config={secondProvider.chat.modelConfig}
+                    onConfigChange={handleSecondProviderConfigChange}
+                    disabled={
+                      !secondProvider.isActive ||
+                      secondProvider.chat?.status === "streaming" ||
+                      secondProvider.chat?.status === "submitted"
+                    }
+                  />
+                </div>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -165,26 +209,29 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               ))}
             </div>
 
-            {secondProvider.chat?.sources && secondProvider.chat.sources.length > 0 && (secondProvider.chat?.status==="ready" ) &&(
-              <SourcesList sources={secondProvider.chat.sources} />
-            )}
+            {secondProvider.chat?.sources &&
+              secondProvider.chat.sources.length > 0 &&
+              secondProvider.chat?.status === "ready" && <SourcesList sources={secondProvider.chat.sources} />}
 
-            {secondProvider.chat?.searchSuggestions && secondProvider.chat.searchSuggestions.length > 0 && (secondProvider.chat?.status==="ready" ) &&(
-              <SearchSuggestions
-                suggestions={secondProvider.chat.searchSuggestions}
-                reasoning={secondProvider.chat.searchSuggestionsReasoning}
-                confidence={secondProvider.chat.searchSuggestionsConfidence}
-                onSuggestionClick={onSearchSuggestionClick}
-              />
-            )}
+            {secondProvider.chat?.searchSuggestions &&
+              secondProvider.chat.searchSuggestions.length > 0 &&
+              secondProvider.chat?.status === "ready" && (
+                <SearchSuggestions
+                  suggestions={secondProvider.chat.searchSuggestions}
+                  reasoning={secondProvider.chat.searchSuggestionsReasoning}
+                  confidence={secondProvider.chat.searchSuggestionsConfidence}
+                  onSuggestionClick={onSearchSuggestionClick}
+                />
+              )}
 
-            {secondProvider.chat?.tokenUsage && (secondProvider.chat?.status==="ready" ) &&(
+            {secondProvider.chat?.tokenUsage && secondProvider.chat?.status === "ready" && (
               <TokenUsageDisplay tokenUsage={secondProvider.chat.tokenUsage} providerId={secondProvider.id} />
             )}
-            {secondProvider.chat?.messages && secondProvider.chat.messages.length > 0 && (secondProvider.chat?.status==="ready" ) && (
-                  <ModelConfigBlock chat={secondProvider.chat} providerId={secondProvider.id}/>
-            )}
-           
+            {secondProvider.chat?.messages &&
+              secondProvider.chat.messages.length > 0 &&
+              secondProvider.chat?.status === "ready" && (
+                <ModelConfigBlock chat={secondProvider.chat} providerId={secondProvider.id} />
+              )}
           </div>
         </CardContent>
       </Card>

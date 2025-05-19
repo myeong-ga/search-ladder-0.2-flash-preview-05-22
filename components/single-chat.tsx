@@ -78,14 +78,13 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
     setProviderId(newProviderId)
   }
 
-
-  const handleConfigChange = (config: ModelConfig) => {
+  const handleConfigChange = (config: ModelConfig, showToast = false) => {
+    console.log("Updated model config:", config)
     if (chat?.updateModelConfig) {
-      chat.updateModelConfig(config)
+      chat.updateModelConfig(config, showToast)
     }
   }
 
-  
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
 
@@ -130,7 +129,6 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
                       onConfigChange={handleConfigChange}
                       disabled={isLoading}
                     />
-
                   </div>
                 )}
                 <Button
@@ -183,8 +181,10 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
                 ))}
               </div>
 
-              {chat?.sources && chat.sources.length > 0 &&  (chat?.status==="ready" ) &&  <SourcesList sources={chat.sources} />}
-              {chat?.searchSuggestions && chat.searchSuggestions.length > 0 &&  (chat?.status==="ready" ) && (
+              {chat?.sources && chat.sources.length > 0 && chat?.status === "ready" && (
+                <SourcesList sources={chat.sources} />
+              )}
+              {chat?.searchSuggestions && chat.searchSuggestions.length > 0 && chat?.status === "ready" && (
                 <SearchSuggestions
                   suggestions={chat.searchSuggestions}
                   reasoning={chat.searchSuggestionsReasoning}
@@ -193,12 +193,13 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
                 />
               )}
 
-              {chat?.tokenUsage &&  (chat?.status==="ready" ) && <TokenUsageDisplay tokenUsage={chat.tokenUsage} providerId={providerId} />}
-
-              {chat?.messages && chat.messages.length > 0 && (chat?.status==="ready" ) && (
-                 <ModelConfigBlock chat={chat} providerId={providerId}/>
+              {chat?.tokenUsage && chat?.status === "ready" && (
+                <TokenUsageDisplay tokenUsage={chat.tokenUsage} providerId={providerId} />
               )}
-             
+
+              {chat?.messages && chat.messages.length > 0 && chat?.status === "ready" && (
+                <ModelConfigBlock chat={chat} providerId={providerId} />
+              )}
             </div>
           </CardContent>
         </Card>
