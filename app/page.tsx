@@ -1,8 +1,26 @@
+import type React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bot, Brain, Check, ChevronRight, CircleUser, Code, Cpu, Database, Facebook, Github, Handshake, Instagram, Linkedin, Search, Settings, Shield, Twitter, Waypoints, Zap } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Bot,
+  Brain,
+  Check,
+  ChevronRight,
+  Code,
+  Cpu,
+  Database,
+  Facebook,
+  Github,
+  Handshake,
+  Instagram,
+  Linkedin,
+  Search,
+  Shield,
+  Twitter,
+  Waypoints,
+} from "lucide-react"
 import ScrollHeader from "@/components/scroll-header"
 import { Badge } from "@/components/ui/badge"
 
@@ -12,7 +30,6 @@ interface FeatureCardProps {
   description: string
   accentColor?: string
 }
-
 
 interface StepCardProps {
   number: number
@@ -26,10 +43,10 @@ export default function LandingPage() {
     <div className="flex min-h-screen flex-col">
       {/* Header */}
       <ScrollHeader>
-        <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="w-full border-b border-white bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container mx-auto px-4 md:px-6 max-w-7xl flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <Image src="/abstract-sl.png" alt="StreamLine Logo" width={32} height={32} className="rounded" />
+              <Image src="/abstract-sl.svg" alt="StreamLine Logo" width={32} height={32} className="rounded" />
               <span className="text-xl font-bold">StreamLine</span>
             </div>
             <nav className="hidden md:flex gap-6">
@@ -50,7 +67,7 @@ export default function LandingPage() {
               <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
                 Log in
               </Link>
-              <Button  asChild>
+              <Button asChild>
                 <Link href="/dashboard">Get Started</Link>
               </Button>
             </div>
@@ -68,8 +85,9 @@ export default function LandingPage() {
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl xl:text-6xl/none">
                     Navigate the Digital Flux with Intelligent Resource Management
                   </h1>
-                  <p className="max-w-[600px] text-muted-foreground md:text-lg lg:text-xl">
-                  StreamLine의 에이전트는 AI와 인간의 협업으로 자원 목록을 실시간으로 업데이트하며, 고성능 검색 엔진을 통해 필요한 정보를 신속하고 정확하게 제공합니다.
+                  <p className="max-w-[600px] text-muted-foreground md:text-lg lg:text-xl font-spoqa-han-sans">
+                    StreamLine의 에이전트는 AI와 인간의 협업으로 자원 목록을 실시간으로 업데이트하며, 고성능 검색 엔진을
+                    통해 필요한 정보를 신속하고 정확하게 제공합니다.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -103,7 +121,7 @@ export default function LandingPage() {
               <div className="space-y-2">
                 <Badge className="bg-primary/10 text-primary border-primary/20">Features</Badge>
                 <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">StreamLine의 핵심 기능</h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl">
+                <p className="max-w-[900px] text-muted-foreground md:text-xl font-spoqa-han-sans">
                   StreamLine은 기업이 디지털 시대에 민첩하게 대응하고 지속 성장할 수 있도록 강력한 기능들을 제공합니다.
                 </p>
               </div>
@@ -139,16 +157,13 @@ export default function LandingPage() {
                 description="StreamLine은 span 단위의 추적 기능을 제공하여, 사용자의 검색 과정과 결과를 상세히 분석할 수 있습니다. 이를 통해 개인의 검색 능력을 지속적으로 향상시킬 수 있습니다."
                 accentColor="from-purple-500 to-violet-600"
               />
-
-         
             </div>
           </div>
         </section>
 
-
         {/* How It Works Section */}
         <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32">
-           <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+          <div className="container mx-auto px-4 md:px-6 max-w-7xl">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <Badge className="bg-primary/10 text-primary border-primary/20">How It Works</Badge>
@@ -193,7 +208,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <h2 className="text-4xl font-bold tracking-tighter md:text-5xl">합리적인 가격 정책</h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl">
+                <p className="max-w-[900px] text-muted-foreground md:text-xl font-spoqa-han-sans">
                   귀사의 규모와 필요에 맞는 최적의 플랜을 선택하세요. 모든 플랜은 14일 무료 체험이 가능합니다.
                 </p>
               </div>
@@ -379,7 +394,9 @@ export default function LandingPage() {
                       className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
-                  <Button className=" bg-stone-400" type="submit">Send Message</Button>
+                  <Button className=" bg-stone-400" type="submit">
+                    Send Message
+                  </Button>
                 </form>
               </div>
             </div>
@@ -391,7 +408,7 @@ export default function LandingPage() {
       <footer className="w-full border-t py-6 md:py-0">
         <div className="container mx-auto px-4 md:px-6 max-w-7xl flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
           <div className="flex items-center gap-2">
-            <Image src="/abstract-sl.png" alt="StreamLine Logo" width={24} height={24} className="rounded" />
+            <Image src="/abstract-sl.svg" alt="StreamLine Logo" width={24} height={24} className="rounded" />
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} StreamLine. All rights reserved.
             </p>
@@ -449,7 +466,6 @@ function FeatureCard({ icon, title, description, accentColor = "from-primary to-
     </Card>
   )
 }
-
 
 function StepCard({ number, title, description, icon }: StepCardProps) {
   return (

@@ -418,3 +418,7 @@ pre code {
 .dark [data-sonner-toast] {
   background: var(--toast-bg-gradient) !important;
 }
+
+.font-spoqa-han-sans {
+  font-family: "Spoqa Han Sans Neo", "sans-serif";
+}
