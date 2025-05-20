@@ -164,10 +164,6 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-19rem)]">
             <div className="relative space-y-4">
-              <div className="sticky top-0 left-0 right-0  h-1 m-0 z-9 backdrop-blur-[8px]" />
-              <div className="sticky top-1 left-0 right-0  h-1 m-0 z-9 backdrop-blur-[4px]" />
-              <div className="sticky top-2 left-0 right-0  h-2 m-0 z-9 backdrop-blur-[2px]" />
-              <div className="sticky top-4 left-0 right-0  h-2 m-0 z-9 backdrop-blur-[1px]" />
 
               <div className="">
                 {chat?.messages.map((message: Message, index) => (

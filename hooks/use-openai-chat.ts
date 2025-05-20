@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
 import type { SearchSuggestion, Source, TokenUsage, ModelConfig } from "@/lib/types"
@@ -9,13 +9,20 @@ import { useLlmProvider } from "@/contexts/llm-provider-context"
 import { getDefaultModelConfig } from "@/lib/models"
 import { toast } from "sonner"
 
+/*
+  aiMessages - ai sdk 에서 제공하는 메시지
+  optimisticMessages - 낙관적 업데이트를 위해 컴포넌트내에서 운용
+  messages - hook 에서 제공하며 ui component에서 사용
+*/
+
 export function useOpenAIChat() {
   const { getSelectedModel } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
-  const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
   const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
   const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
   const [searchSuggestionsConfidence, setSearchSuggestionsConfidence] = useState<number | null>(null)
+  const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
+  const optimisticMessageIdRef = useRef<string | null>(null)
   const [chatId, setChatId] = useState<string>(() => nanoid())
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
   const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
@@ -25,10 +32,11 @@ export function useOpenAIChat() {
   const [uiModelConfig, setUiModelConfig] = useState<ModelConfig | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
 
   const {
-    messages: chatMessages,
+    messages: aiMessages,
     status,
     stop,
     data,
+    setData,
     append,
     setMessages,
   } = useChat({
@@ -42,25 +50,34 @@ export function useOpenAIChat() {
     },
   })
 
-  // Update model config when selected model changes
+  const messages = [
+    ...optimisticMessages,
+    ...aiMessages.filter((chatMsg) => !optimisticMessages.some((optMsg) => optMsg.id === chatMsg.id)),
+  ]
+
+  useEffect(() => {
+    if (status === "streaming" && optimisticMessages.length > 0) {
+      setOptimisticMessages([])
+      optimisticMessageIdRef.current = null
+    }
+  }, [status, optimisticMessages])
+
+  useEffect(() => {
+    if (aiMessages.length > 0 && optimisticMessageIdRef.current) {
+      const hasOptimisticMessage = aiMessages.some((msg) => msg.id === optimisticMessageIdRef.current)
+      if (hasOptimisticMessage) {
+        setOptimisticMessages([])
+        optimisticMessageIdRef.current = null
+      }
+    }
+  }, [aiMessages])
+
+
   useEffect(() => {
     const selectedModelId = getSelectedModel("openai")
     const defaultConfig = getDefaultModelConfig(selectedModelId).config
     setModelConfig(defaultConfig)
   }, [getSelectedModel])
-
-  const messages = [
-    ...optimisticMessages,
-    ...chatMessages.filter((chatMsg) => !optimisticMessages.some((optMsg) => optMsg.id === chatMsg.id)),
-  ]
-
-  useEffect(() => {
-    if (chatMessages.length > 0) {
-      setOptimisticMessages((prev) =>
-        prev.filter((optMsg) => !chatMessages.some((chatMsg) => chatMsg.id === optMsg.id)),
-      )
-    }
-  }, [chatMessages])
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -143,31 +160,51 @@ export function useOpenAIChat() {
     })
   }, [])
 
-  const sendMessage = async (message: string | CreateMessage) => {
+  const sendMessage = async (message: string ) => {
     setSources([])
+    setSearchSuggestions([])
+    setSearchSuggestionsReasoning("")
+    setSearchSuggestionsConfidence(null)
     setTokenUsage(null)
     setUiModelConfig(null)
-    const userMessage =
-      typeof message === "string"
-        ? ({ role: "user", content: message, id: nanoid() } as Message)
-        : ({ ...message, id: message.id || nanoid() } as Message)
+    setData(undefined); 
+    
+    const userMessage: Message = { id: nanoid(), role: "user", content: message } 
 
-    setOptimisticMessages((prev) => [...prev, userMessage])
+    // 낙관적 업데이트: 사용자 메시지를 낙관적 메시지 배열에 추가
+    setOptimisticMessages([userMessage])
+    optimisticMessageIdRef.current = userMessage.id
 
-    await append(userMessage, {
-      body: {
-        model: getSelectedModel("openai"),
-        modelConfig,
-      },
-    })
+   try {
+      await append(
+        {
+          role: "user",
+          content: userMessage.content,
+          id: userMessage.id,
+        },
+        {
+          body: {
+            model: getSelectedModel("openai"),
+          },
+        },
+      )
+    } catch (error) {
+      console.error("Failed to send message:", error)
+      setOptimisticMessages([])
+      optimisticMessageIdRef.current = null
+    }
   }
 
   const resetChat = useCallback(() => {
     setOptimisticMessages([])
     setSources([])
+    setSearchSuggestions([])
+    setSearchSuggestionsReasoning("")
+    setSearchSuggestionsConfidence(null)
     setTokenUsage(null)
     setUiModelConfig(null)
     setMessages([])
+    setData(undefined); 
     setChatId(nanoid())
 
     // Reset model config to default

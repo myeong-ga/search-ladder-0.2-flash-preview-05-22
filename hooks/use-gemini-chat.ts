@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useChat } from "@ai-sdk/react"
 import type { CreateMessage, Message } from "@ai-sdk/react"
 import type { Source, TokenUsage, ModelConfig } from "@/lib/types"
@@ -10,6 +10,13 @@ import { useLlmProvider } from "@/contexts/llm-provider-context"
 import { getDefaultModelConfig } from "@/lib/models"
 import { toast } from "sonner"
 
+
+/*
+  aiMessages - ai sdk 에서 제공하는 메시지
+  optimisticMessages - 낙관적 업데이트를 위해 컴포넌트내에서 운용
+  messages - hook 에서 제공하며 ui component에서 사용
+*/
+
 export function useGeminiChat() {
   const { getSelectedModel } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
@@ -17,20 +24,21 @@ export function useGeminiChat() {
   const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
   const [searchSuggestionsConfidence, setSearchSuggestionsConfidence] = useState<number | null>(null)
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
+  const optimisticMessageIdRef = useRef<string | null>(null)
   const [chatId, setChatId] = useState<string>(() => nanoid())
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
   const [modelConfig, setModelConfig] = useState<ModelConfig>(() => {
-    // LLM model config
     const selectedModelId = getSelectedModel("gemini")
     return getDefaultModelConfig(selectedModelId).config
   })
   const [uiModelConfig, setUiModelConfig] = useState<ModelConfig | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
 
   const {
-    messages: chatMessages,
+    messages: aiMessages,
     status,
     stop,
     data,
+    setData,
     append,
     setMessages,
   } = useChat({
@@ -44,25 +52,35 @@ export function useGeminiChat() {
     },
   })
 
-  // Update model config when selected model changes
+  const messages = [
+    ...optimisticMessages,
+    ...aiMessages.filter((chatMsg) => !optimisticMessages.some((optMsg) => optMsg.id === chatMsg.id)),
+  ]
+
+  useEffect(() => {
+    if (status === "streaming" && optimisticMessages.length > 0) {
+      setOptimisticMessages([])
+      optimisticMessageIdRef.current = null
+    }
+  }, [status, optimisticMessages])
+
+  useEffect(() => {
+    if (aiMessages.length > 0 && optimisticMessageIdRef.current) {
+      const hasOptimisticMessage = aiMessages.some((msg) => msg.id === optimisticMessageIdRef.current)
+      if (hasOptimisticMessage) {
+        setOptimisticMessages([])
+        optimisticMessageIdRef.current = null
+      }
+    }
+  }, [aiMessages])
+
+
   useEffect(() => {
     const selectedModelId = getSelectedModel("gemini")
     const defaultConfig = getDefaultModelConfig(selectedModelId).config
     setModelConfig(defaultConfig)
   }, [getSelectedModel])
 
-  const messages = [
-    ...optimisticMessages,
-    ...chatMessages.filter((chatMsg) => !optimisticMessages.some((optMsg) => optMsg.id === chatMsg.id)),
-  ]
-
-  useEffect(() => {
-    if (chatMessages.length > 0) {
-      setOptimisticMessages((prev) =>
-        prev.filter((optMsg) => !chatMessages.some((chatMsg) => chatMsg.id === optMsg.id)),
-      )
-    }
-  }, [chatMessages])
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -108,8 +126,11 @@ export function useGeminiChat() {
               setUiModelConfig(config)
             }
           } else if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
+          
             setMessages((prevMessages) => {
+
               const newMessages = [...prevMessages]
+
               for (let i = newMessages.length - 1; i >= 0; i--) {
                 if (newMessages[i].role === "assistant") {
                   newMessages[i] = {
@@ -121,6 +142,7 @@ export function useGeminiChat() {
               }
               return newMessages
             })
+
           }
         }
       }
@@ -145,27 +167,40 @@ export function useGeminiChat() {
     })
   }, [])
 
-  const sendMessage = async (message: string | CreateMessage) => {
+
+  const sendMessage = async (message: string ) => {
+    setData(undefined); 
     setSources([])
     setSearchSuggestions([])
     setSearchSuggestionsReasoning("")
     setSearchSuggestionsConfidence(null)
     setTokenUsage(null)
     setUiModelConfig(null)
+    const userMessage: Message = { id: nanoid(), role: "user", content: message } 
+      // typeof message === "string" ? { id: nanoid(), role: "user", content: message } : { id: nanoid(), ...message }
 
-    const userMessage =
-      typeof message === "string"
-        ? ({ role: "user", content: message, id: nanoid() } as Message)
-        : ({ ...message, id: message.id || nanoid() } as Message)
+    // 낙관적 업데이트: 사용자 메시지를 낙관적 메시지 배열에 추가
+    setOptimisticMessages([userMessage])
+    optimisticMessageIdRef.current = userMessage.id
 
-    setOptimisticMessages((prev) => [...prev, userMessage])
-
-    await append(userMessage, {
-      body: {
-        model: getSelectedModel("gemini"),
-        modelConfig,
-      },
-    })
+   try {
+      await append(
+        {
+          role: "user",
+          content: userMessage.content,
+          id: userMessage.id,
+        },
+        {
+          body: {
+            model: getSelectedModel("gemini"),
+          },
+        },
+      )
+    } catch (error) {
+      console.error("Failed to send message:", error)
+      setOptimisticMessages([])
+      optimisticMessageIdRef.current = null
+    }
   }
 
   const resetChat = useCallback(() => {
@@ -175,6 +210,7 @@ export function useGeminiChat() {
     setSearchSuggestionsReasoning("")
     setSearchSuggestionsConfidence(null)
     setMessages([])
+    setData(undefined); 
     setChatId(nanoid())
     setTokenUsage(null)
     setUiModelConfig(null)

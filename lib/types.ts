@@ -65,7 +65,7 @@ export interface ChatInterface {
   status: ChatStatus
   stop: () => void
   sources: Source[]
-  sendMessage: (message: string | CreateMessage) => Promise<void>
+  sendMessage: (message: string ) => Promise<void>
   searchSuggestions?: SearchSuggestion[]
   searchSuggestionsReasoning?: string
   searchSuggestionsConfidence?: number | null
