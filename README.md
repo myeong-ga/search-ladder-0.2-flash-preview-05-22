@@ -2,9 +2,9 @@
 https://nextjs.org/learn?utm_source=next-site&utm_medium=homepage-cta&utm_campaign=home
 
 ### SDKs
-## Google Gemini : Vercel AI SDK
-## OpenAI : Vercel AI SDK , OpenAI Responses API
-## Anthropic : Anthropic SDK TypeScript
+- Google Gemini : Vercel AI SDK
+- OpenAI : Vercel AI SDK , OpenAI Responses API
+- Anthropic : Anthropic SDK TypeScript
 
 ### Models 
 Flagship Models
@@ -60,6 +60,10 @@ export const providers: ProviderInfo[] = [
 ]
 
 ```
+## 📹 Demo
+
+https://github.com/user-attachments/assets/f8ff0fb0-9526-4294-a1ba-ca3ceaa55be6
+
 
 ### Google Gemini 기반 검색 챗봇 개발 작업일지 (2024.04.23)
 
