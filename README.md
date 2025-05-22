@@ -2,9 +2,9 @@
 https://nextjs.org/learn?utm_source=next-site&utm_medium=homepage-cta&utm_campaign=home
 
 ### SDKs
-Google Gemini : Vercel AI SDK
-OpenAI : Vercel AI SDK , OpenAI Responses API
-Anthropic : Anthropic SDK TypeScript
+## Google Gemini : Vercel AI SDK
+## OpenAI : Vercel AI SDK , OpenAI Responses API
+## Anthropic : Anthropic SDK TypeScript
 
 ### Models 
 Flagship Models
