@@ -1,23 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { TokenUsage, ProviderType } from "@/lib/types"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import type { TokenUsage, ProviderType, ChatInterface } from "@/lib/types"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { InfoIcon } from "lucide-react"
-import { useLlmProvider } from "@/contexts/llm-provider-context"
 
 interface TokenUsageDisplayProps {
-  tokenUsage: TokenUsage | null | undefined
-  providerId: ProviderType
+  chat: ChatInterface | null
 }
 
-export function TokenUsageDisplay({ tokenUsage, providerId }: TokenUsageDisplayProps) {
-  const { getSelectedModel, providers } = useLlmProvider()
+export function TokenUsageDisplay({ chat}: TokenUsageDisplayProps) {
+
+  const tokenUsage = chat?.tokenUsage as TokenUsage | null
 
   if (!tokenUsage) return null
 
-  const selectedModelId = getSelectedModel(providerId)
-  const provider = providers.find((p) => p.id === providerId)
-  const model = provider?.models.find((m) => m.id === selectedModelId)
-  const modelName = model?.name || selectedModelId
 
   const getFinishReasonDescription = (reason: string): string => {
     switch (reason.toLowerCase()) {
@@ -40,8 +35,11 @@ export function TokenUsageDisplay({ tokenUsage, providerId }: TokenUsageDisplayP
 
   return (
     <Card className="mt-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Token Usage {modelName && `(${modelName})`}</CardTitle>
+      <CardHeader className="pb-2 flex items-center justify-between">
+        <CardTitle className="text-sm font-medium">Token Usage</CardTitle>
+         <CardDescription className="text-xs text-foreground">{chat?.responseSelectModel && `${chat.responseSelectModel}`}  
+          {chat?.responseReasoningType === "Thinking"? " 🧠 " : " 🤖 "}
+          {chat?.responseReasoningType && `${chat.responseReasoningType}`}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-3 gap-2 text-sm">

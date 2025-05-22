@@ -23,6 +23,7 @@ import { TokenUsageDisplay } from "./token-usage-display"
 import { ModelConfigDisplay } from "./model-config-display"
 import { ModelConfigBlock } from "./model-config-block"
 import { ModelConfigDialog } from "./model-config-dialog"
+import { cn } from "@/lib/utils"
 
 interface SingleChatProps {
   initialProviderId?: ProviderType
@@ -164,7 +165,7 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto h-[calc(100vh-16rem)] max-h-[calc(100vh-19rem)]">
             <div className="relative space-y-4">
-
+              
               <div className="">
                 {chat?.messages.map((message: Message, index) => (
                   <ChatMessageSingle
@@ -190,11 +191,11 @@ export function SingleChat({ initialProviderId = "gemini" }: SingleChatProps) {
               )}
 
               {chat?.tokenUsage && chat?.status === "ready" && (
-                <TokenUsageDisplay tokenUsage={chat.tokenUsage} providerId={providerId} />
+                <TokenUsageDisplay chat={chat}/>
               )}
 
               {chat?.messages && chat.messages.length > 0 && chat?.status === "ready" && (
-                <ModelConfigBlock chat={chat} providerId={providerId} />
+                <ModelConfigBlock chat={chat}/>
               )}
             </div>
           </CardContent>

@@ -16,7 +16,7 @@ import { toast } from "sonner"
 */
 
 export function useOpenAIChat() {
-  const { getSelectedModel } = useLlmProvider()
+  const { getSelectedModel ,getReasoningType } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
   const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
   const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
@@ -30,6 +30,11 @@ export function useOpenAIChat() {
     return getDefaultModelConfig(selectedModelId).config
   })
   const [uiModelConfig, setUiModelConfig] = useState<ModelConfig | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+  const [responseSelectModel, setResponseSelectModel] = useState<string | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+  const [responseReasoningType, setResponseReasoningType] = useState<string | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+
+  const selectedModelId = getSelectedModel("openai")
+  const reasoningType = getReasoningType("openai", selectedModelId)
 
   const {
     messages: aiMessages,
@@ -45,11 +50,12 @@ export function useOpenAIChat() {
     generateId: nanoid,
     experimental_throttle: 50,
     body: {
-      model: getSelectedModel("openai"),
+      model: selectedModelId,
       modelConfig,
+      reasoningType,
     },
   })
-
+ 
   const messages = [
     ...optimisticMessages,
     ...aiMessages.filter((chatMsg) => !optimisticMessages.some((optMsg) => optMsg.id === chatMsg.id)),
@@ -122,6 +128,18 @@ export function useOpenAIChat() {
                 setSearchSuggestionsReasoning(item.reasoning)
               }
             }
+          } else if (item.type === "selected-model" && typeof item.model === "string") {
+           
+            const responseModel = item.model as string
+          
+            setResponseSelectModel(responseModel)
+            
+          } else if (item.type === "reasoning-type" && typeof item.reasoning === "string") {
+           
+            const responseReasoing = item.reasoning as string
+          
+            setResponseReasoningType(responseReasoing)
+            
           } else if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
             setMessages((prevMessages) => {
               const newMessages = [...prevMessages]
@@ -184,7 +202,9 @@ export function useOpenAIChat() {
         },
         {
           body: {
-            model: getSelectedModel("openai"),
+            model: selectedModelId,
+            modelConfig,
+            reasoningType,
           },
         },
       )
@@ -226,6 +246,8 @@ export function useOpenAIChat() {
     resetChat,
     modelConfig,
     uiModelConfig,
+    responseSelectModel,
+    responseReasoningType,
     updateModelConfig,
   }
 }

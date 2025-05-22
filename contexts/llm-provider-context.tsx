@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { ProviderInfo, ProviderType } from "@/lib/types"
+import type { ProviderInfo, ProviderType, ReasoningType } from "@/lib/types"
 import { providers as initialProviders } from "@/lib/providers"
 import Cookies from "js-cookie"
 
@@ -11,6 +11,7 @@ interface LlmProviderContextType {
   checkAvailability: () => Promise<void>
   updateSelectedModel: (providerId: ProviderType, modelId: string) => void
   getSelectedModel: (providerId: ProviderType) => string
+  getReasoningType: (providerId: ProviderType, modelId: string) => ReasoningType
 }
 
 const LlmProviderContext = createContext<LlmProviderContextType | undefined>(undefined)
@@ -26,13 +27,12 @@ export function LlmProviderContextProvider({ children }: { children: ReactNode }
       anthropic: "",
     }
 
-    // Set default models from providers
     initialProviders.forEach((provider) => {
       const defaultModel = provider.models.find((model) => model.isDefault)
       if (defaultModel) {
-        defaults[provider.id] = defaultModel.id
+        defaults[provider.id  as keyof typeof defaults] = defaultModel.id 
       } else if (provider.models.length > 0) {
-        defaults[provider.id] = provider.models[0].id
+        defaults[provider.id  as keyof typeof defaults] = provider.models[0].id
       }
     })
 
@@ -79,6 +79,13 @@ export function LlmProviderContextProvider({ children }: { children: ReactNode }
   const getSelectedModel = (providerId: ProviderType): string => {
     return selectedModels[providerId] || ""
   }
+  const getReasoningType = (providerId: ProviderType, modelId: string): ReasoningType => {
+    const provider = providers.find((p) => p.id === providerId)
+    if (!provider) return undefined
+
+    const model = provider.models.find((m) => m.id === modelId)
+    return model?.reasoningType
+  }
 
   useEffect(() => {
     checkAvailability()
@@ -92,6 +99,7 @@ export function LlmProviderContextProvider({ children }: { children: ReactNode }
         checkAvailability,
         updateSelectedModel,
         getSelectedModel,
+        getReasoningType,
       }}
     >
       {children}

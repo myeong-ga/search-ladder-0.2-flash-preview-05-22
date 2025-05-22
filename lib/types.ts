@@ -30,15 +30,17 @@ export interface AnthropicModelMessage {
 }
 
 export type ProviderType = "gemini" | "openai" | "anthropic"
+export type ReasoningType = "Reasoning" | "Thinking" | "Intelligence" | undefined
 
 export interface ModelInfo {
   id: string
   name: string
   isDefault?: boolean
+  reasoningType?: ReasoningType
 }
 
 export interface ProviderInfo {
-  id: ProviderType
+  id: string
   name: string
   description: string
   logoSrc: string
@@ -74,6 +76,8 @@ export interface ChatInterface {
   tokenUsage?: TokenUsage | null
   modelConfig: ModelConfig
   uiModelConfig: ModelConfig | null
+  responseSelectModel: string | null
+  responseReasoningType: string | null
   updateModelConfig: (config: Partial<ModelConfig>, showToast?: boolean) => void
 }
 

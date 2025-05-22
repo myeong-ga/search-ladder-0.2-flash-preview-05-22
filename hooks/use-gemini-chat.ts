@@ -18,7 +18,7 @@ import { toast } from "sonner"
 */
 
 export function useGeminiChat() {
-  const { getSelectedModel } = useLlmProvider()
+  const { getSelectedModel ,getReasoningType } = useLlmProvider()
   const [sources, setSources] = useState<Source[]>([])
   const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
   const [searchSuggestionsReasoning, setSearchSuggestionsReasoning] = useState<string>("")
@@ -32,6 +32,10 @@ export function useGeminiChat() {
     return getDefaultModelConfig(selectedModelId).config
   })
   const [uiModelConfig, setUiModelConfig] = useState<ModelConfig | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+  const [responseSelectModel, setResponseSelectModel] = useState<string | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+  const [responseReasoningType, setResponseReasoningType] = useState<string | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+  const selectedModelId = getSelectedModel("gemini")
+  const reasoningType = getReasoningType("gemini", selectedModelId)
 
   const {
     messages: aiMessages,
@@ -47,8 +51,9 @@ export function useGeminiChat() {
     generateId: nanoid,
     experimental_throttle: 50,
     body: {
-      model: getSelectedModel("gemini"),
+      model: selectedModelId,
       modelConfig,
+      reasoningType,
     },
   })
 
@@ -125,6 +130,18 @@ export function useGeminiChat() {
             ) {
               setUiModelConfig(config)
             }
+          }  else if (item.type === "selected-model" && typeof item.model === "string") {
+           
+            const responseModel = item.model as string
+          
+            setResponseSelectModel(responseModel)
+            
+          } else if (item.type === "reasoning-type" && typeof item.reasoning === "string") {
+           
+            const responseReasoning = item.reasoning as string
+          
+            setResponseReasoningType(responseReasoning)
+            
           } else if (item.type === "cleaned-text" && "text" in item && typeof item.text === "string") {
           
             setMessages((prevMessages) => {
@@ -192,7 +209,9 @@ export function useGeminiChat() {
         },
         {
           body: {
-            model: getSelectedModel("gemini"),
+            model: selectedModelId,
+            modelConfig,
+            reasoningType,
           },
         },
       )
@@ -234,6 +253,8 @@ export function useGeminiChat() {
     resetChat,
     modelConfig, // LLM 모델 파라미터
     uiModelConfig,
+    responseSelectModel,
+    responseReasoningType,
     updateModelConfig,
   }
 }

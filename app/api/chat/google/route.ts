@@ -1,4 +1,4 @@
-import { google } from "@ai-sdk/google"
+import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google"
 import { createDataStreamResponse, JSONValue, streamText } from "ai"
 import type { NextRequest } from "next/server"
 import { GOOGLE_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
@@ -126,17 +126,19 @@ export async function POST(req: NextRequest) {
 
     // Get model configuration
     const modelConfig: ModelConfig = body.modelConfig || DEFAULT_MODEL_CONFIG
+    const reasoningType = body.reasoningType || "Reasoning"
 
     // Validate and sanitize messages
     const validatedMessages = validateMessages(body.messages)
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        console.log("Starting Gemini stream execution with model:", selectedModel)
+        
+        console.log("Starting OpenAI stream execution with model:", selectedModel, "reasoningType:", reasoningType)
 
         let fullText = ""
 
-        const result = await streamText({
+        const result = streamText({
           model: google(selectedModel, {
             useSearchGrounding: true,
           }),
@@ -145,6 +147,16 @@ export async function POST(req: NextRequest) {
           temperature: modelConfig.temperature,
           topP: modelConfig.topP,
           maxTokens: modelConfig.maxTokens,
+          // The 'includeThoughts' option is only supported with the Google Vertex provider
+          // and might not be supported or could behave unexpectedly with the current Google provider
+          // providerOptions: {
+          //   google: {
+          //     thinkingConfig: {
+          //       thinkingBudget: 1024,
+          //       includeThoughts: true,
+          //     },
+          //   },
+          // },
           onChunk: ({ chunk }) => {
             if (chunk.type === "text-delta") {
               fullText += chunk.textDelta
@@ -155,7 +167,7 @@ export async function POST(req: NextRequest) {
               })
             }
           },
-          onFinish: ({ text, providerMetadata, usage, finishReason }) => {
+          onFinish: ({ text, providerMetadata, usage, finishReason , reasoning }) => {
             console.log("Gemini onFinish called")
 
             try {
@@ -232,10 +244,22 @@ export async function POST(req: NextRequest) {
                   },
                 })
               }
-
+              if (reasoning) {
+                console.log("Gemini reasoning:", reasoning)
+              }
               dataStream.writeData({
                 type: "model-config",
                 config: modelConfig,
+              } as unknown as JSONValue)
+
+              dataStream.writeData({
+                type: "selected-model",
+                model: selectedModel,
+              } as unknown as JSONValue)
+
+              dataStream.writeData({
+                type: "reasoning-type",
+                reasoning: reasoningType,
               } as unknown as JSONValue)
 
             } catch (error) {

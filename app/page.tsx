@@ -70,6 +70,15 @@ export default function LandingPage() {
               <Button asChild>
                 <Link href="/dashboard">Get Started</Link>
               </Button>
+               <Button variant="outline" asChild>
+                <Link
+                  href="https://v0.dev/chat/open-streamline-landing-page-a6GMN5Cu310"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open in v0
+                </Link>
+              </Button>
             </div>
           </div>
         </header>
@@ -130,7 +139,7 @@ export default function LandingPage() {
               <FeatureCard
                 icon={<Brain className="h-12 w-12" />}
                 title="High-Performance Search and Inference Capabilities"
-                description="StreamLine은 주요 LLM 제공사의 플래그십 모델을 활용하여, test-time compute를 통해 강력한 검색 및 추론 능력을 제공합니다. 이를 통해 사용자는 복잡한 데이터에서도 신속하고 정확한 정보를 얻을 수 있습니다."
+                description="StreamLine은 주요 LLM 제공사의 플래그십 모델을 활용하여, test-time compute를 통해 강력한 검색 및 추론 능력을 제공합니다. 이를 통해 사용자는 복잡한 데이터에서도 추적가능하며 신뢰할수있는 정보를 얻을 수 있습니다."
                 accentColor="from-blue-500 to-indigo-700"
               />
               <FeatureCard

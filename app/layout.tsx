@@ -10,9 +10,22 @@ import { Toaster } from "sonner"
 import { CustomToaster } from "@/components/custom-toaster"
 
 
+
 export const metadata: Metadata = {
-  title: "AI Search Model Comparison",
+
+  title: {
+    default: "AI Search Model Comparison",
+    template: "%s | CS Studio",
+  },
   description: "Compare search results from Google Gemini and OpenAI side by side",
+  generator: 'v0.dev',
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: { url: "/apple-icon.png", type: "image/png", sizes: "180x180" },
+  },
 }
 
 export default function RootLayout({

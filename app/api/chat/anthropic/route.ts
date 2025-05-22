@@ -102,13 +102,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Get model configuration
     const modelConfig: ModelConfig = body.modelConfig || DEFAULT_MODEL_CONFIG
+    const reasoningType = body.reasoningType || "Reasoning"
 
-    // Validate and sanitize messages - filter out system messages
     const validatedMessages = validateMessages(body.messages)
-
-    // Format the messages for Anthropic API
     const formattedMessages = validatedMessages.map((msg) => ({
       role: msg.role,
       content: msg.content,
@@ -127,14 +124,21 @@ export async function POST(req: NextRequest) {
             max_tokens: modelConfig.maxTokens,
             temperature: modelConfig.temperature,
             top_p: modelConfig.topP,
-            system: ANTHROPIC_SEARCH_SUGGESTIONS_PROMPT, // Use the search suggestions prompt
+            system: ANTHROPIC_SEARCH_SUGGESTIONS_PROMPT,
             messages: formattedMessages,
             tools,
+            //     claude sonnet 3.7 에서 다음을 지원
+            // thinking: { type: 'enabled', budget_tokens: 1600 },
+            // thinking 을 사용하려면 temperature 가 1로 설정되어야 하고 
+            // top P 는 파라미터에서 사용되어서는 안된다.
+            // claude sonnet 3.5는 thinking 을 지원하지 않으니 thinking 이 설정되어서는 안된다.
+            // thinking: { type: 'enabled', budget_tokens: 1600 },
           })
 
           const sources: any[] = []
           let fullText = ""
-          console.log("Starting Claude stream execution with model:", selectedModel)
+         
+          console.log("Starting Anthropic stream execution with model:", selectedModel, "reasoningType:", reasoningType)
 
           for await (const chunk of stream) {
             if (chunk.type === "content_block_delta") {
@@ -165,7 +169,7 @@ export async function POST(req: NextRequest) {
                   }
                 }
               } else if (chunk.delta.type === "thinking_delta") {
-                console.log(`Thinking: ${chunk.delta.thinking}`)
+                console.log(`Claude Thinking: ${chunk.delta.thinking}`)
               }
             } else if (chunk.type === "message_delta") {
               if (chunk.delta.stop_reason) {
@@ -222,6 +226,19 @@ export async function POST(req: NextRequest) {
             config: modelConfig,
           }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(configData)}\n\n`))
+
+          const selectedModelData = {
+            type:"selected-model",
+            model: selectedModel,
+          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(selectedModelData)}\n\n`))
+
+          const reasoningTypeData = {
+            type:"reasoning-type",
+            reasoning: reasoningType,
+          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(reasoningTypeData)}\n\n`))
+          
 
           controller.close()
         } catch (error) {

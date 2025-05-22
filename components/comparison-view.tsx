@@ -133,12 +133,12 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               )}
 
             {firstProvider.chat?.tokenUsage && firstProvider.chat?.status === "ready" && (
-              <TokenUsageDisplay tokenUsage={firstProvider.chat.tokenUsage} providerId={firstProvider.id} />
+              <TokenUsageDisplay chat={firstProvider.chat}/>
             )}
             {firstProvider.chat?.messages &&
               firstProvider.chat.messages.length > 0 &&
               firstProvider.chat?.status === "ready" && (
-                <ModelConfigBlock chat={firstProvider.chat} providerId={firstProvider.id} />
+                <ModelConfigBlock chat={firstProvider.chat}/>
               )}
           </div>
         </CardContent>
@@ -225,12 +225,12 @@ export function ComparisonView({ firstProvider, secondProvider, onSearchSuggesti
               )}
 
             {secondProvider.chat?.tokenUsage && secondProvider.chat?.status === "ready" && (
-              <TokenUsageDisplay tokenUsage={secondProvider.chat.tokenUsage} providerId={secondProvider.id} />
+              <TokenUsageDisplay chat={secondProvider.chat}/>
             )}
             {secondProvider.chat?.messages &&
               secondProvider.chat.messages.length > 0 &&
               secondProvider.chat?.status === "ready" && (
-                <ModelConfigBlock chat={secondProvider.chat} providerId={secondProvider.id} />
+                <ModelConfigBlock chat={secondProvider.chat}/>
               )}
           </div>
         </CardContent>

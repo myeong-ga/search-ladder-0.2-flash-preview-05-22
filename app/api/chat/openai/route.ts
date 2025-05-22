@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai"
-import { createDataStreamResponse, JSONValue, streamText } from "ai"
+import { createDataStreamResponse, type JSONValue, streamText } from "ai"
 import type { NextRequest } from "next/server"
 import { OPENAI_SEARCH_SUGGESTIONS_PROMPT } from "@/lib/system-prompt"
 import type { ModelMessage, ModelConfig } from "@/lib/types"
@@ -85,53 +85,46 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Get model configuration
     const modelConfig: ModelConfig = body.modelConfig || DEFAULT_MODEL_CONFIG
+    const reasoningType = body.reasoningType || "Reasoning"
 
     const validatedMessages = validateMessages(body.messages)
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
-        console.log("Starting OpenAI stream execution with model:", selectedModel)
+          console.log("Starting OpenAI stream execution with model:", selectedModel, "reasoningType:", reasoningType)
 
         let fullText = ""
-        const result = streamText({
+        const streamOptions = {
           model: openai.responses(selectedModel),
           messages: validatedMessages,
           system: OPENAI_SEARCH_SUGGESTIONS_PROMPT,
           temperature: modelConfig.temperature,
           topP: modelConfig.topP,
           maxTokens: modelConfig.maxTokens,
-          providerOptions: {
-            openai: {
-              reasoningSummary: "auto", // 'auto' for condensed or 'detailed' for comprehensive
-            },
-          },
-          tools: {
-            web_search_preview: openai.tools.webSearchPreview({
-              searchContextSize: "medium",
-            }),
-          },
-          toolChoice: { type: "tool", toolName: "web_search_preview" },
           maxSteps: 5,
+          // @ts-expect-error
           onChunk: ({ chunk }) => {
             if (chunk.type === "text-delta") {
               fullText += chunk.textDelta
               dataStream.writeData({ type: "text-delta", text: chunk.textDelta })
-            }
+            } else  { //if (chunk.type === 'reasoning') {
+              process.stdout.write('\x1b[34m' + chunk.textDelta + '\x1b[0m');
+            } 
           },
+          // @ts-expect-error
           onFinish: ({ reasoning, sources, usage, finishReason }) => {
-            //console.log("OpenAI sources:", sources)
             if (sources && sources.length > 0) {
               const formattedSources = sources
+                // @ts-expect-error
                 .filter((source) => source.sourceType === "url")
+                // @ts-expect-error
                 .map((source) => ({
                   url: source.url,
                   title: source.title || new URL(source.url).hostname,
                 }))
 
               if (formattedSources.length > 0) {
-                //console.log("OpenAI formattedSources:", formattedSources)
                 dataStream.writeData({ type: "sources", sources: formattedSources })
               }
             }
@@ -169,8 +162,38 @@ export async function POST(req: NextRequest) {
               type: "model-config",
               config: modelConfig,
             } as unknown as JSONValue)
+            dataStream.writeData({
+                type: "selected-model",
+                model: selectedModel,
+              } as unknown as JSONValue)
+            dataStream.writeData({
+                type: "reasoning-type",
+                reasoning: reasoningType,
+              } as unknown as JSONValue)
           },
-        })
+        }
+
+        if (reasoningType === "Intelligence") {
+          Object.assign(streamOptions, {
+            tools: {
+              web_search_preview: openai.tools.webSearchPreview({
+                searchContextSize: "medium",
+              }),
+            },
+            toolChoice: { type: "tool", toolName: "web_search_preview" },
+          })
+        }
+
+        if (reasoningType === "Thinking") {
+          Object.assign(streamOptions, {
+            providerOptions: {
+              openai: { reasoningEffort: 'high' }, // This parameter can be set to `'low'`, `'medium'`, or `'high'` to adjust how much time and computation the model spends on internal reasoning before producing a response.
+              reasoningSummary: "auto",
+            },
+          })
+        }
+
+        const result = streamText(streamOptions)
 
         result.mergeIntoDataStream(dataStream)
       },

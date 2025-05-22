@@ -124,7 +124,7 @@ export function MobileComparisonView({
           )}
 
           {firstProvider.chat?.tokenUsage && (
-            <TokenUsageDisplay tokenUsage={firstProvider.chat.tokenUsage} providerId={firstProvider.id} />
+            <TokenUsageDisplay chat={firstProvider.chat}/>
           )}
         </div>
       </TabsContent>
@@ -154,7 +154,7 @@ export function MobileComparisonView({
           )}
 
           {secondProvider.chat?.tokenUsage && (
-            <TokenUsageDisplay tokenUsage={secondProvider.chat.tokenUsage} providerId={secondProvider.id} />
+            <TokenUsageDisplay chat={secondProvider.chat}/>
           )}
         </div>
       </TabsContent>

@@ -5,7 +5,11 @@ export const DEFAULT_MODEL_CONFIG = {
   topP: 0.8,
   maxTokens: 4000,
 }
-
+export const DEFAULT_THINKING_CONFIG = {
+  temperature: 1,
+  // topP: 0.8,
+  maxTokens: 6000,
+}
 export const model_config: ModelConfigInfo[] = [
   // Gemini models
   {

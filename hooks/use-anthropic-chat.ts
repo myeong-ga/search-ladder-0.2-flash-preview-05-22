@@ -10,7 +10,7 @@ import { getDefaultModelConfig } from "@/lib/models"
 import { toast } from "sonner"
 
 export function useAnthropicChat() {
-  const { getSelectedModel } = useLlmProvider()
+  const { getSelectedModel ,getReasoningType} = useLlmProvider()
   const [messages, setMessages] = useState<Message[]>([])
   const [sources, setSources] = useState<Source[]>([])
   const [searchSuggestions, setSearchSuggestions] = useState<SearchSuggestion[]>([])
@@ -26,6 +26,11 @@ export function useAnthropicChat() {
     return getDefaultModelConfig(selectedModelId).config
   })
   const [uiModelConfig, setUiModelConfig] = useState<ModelConfig | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+  const [responseSelectModel, setResponseSelectModel] = useState<string | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+  const [responseReasoningType, setResponseReasoningType] = useState<string | null>(null) // 마지막 응답에서 확인할 수 있는 model config , chatting 창 message display 와 함께 사용된다
+
+  const selectedModelId = getSelectedModel("anthropic")
+  const reasoningType = getReasoningType("anthropic", selectedModelId)
 
   // Update model config when selected model changes
   useEffect(() => {
@@ -121,9 +126,10 @@ export function useAnthropicChat() {
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
-          model: getSelectedModel("anthropic"),
+          model: selectedModelId,
           chatId,
           modelConfig,
+          reasoningType
         }),
         signal: newController.signal,
       })
@@ -191,6 +197,18 @@ export function useAnthropicChat() {
                   ) {
                     setUiModelConfig(config)
                   }
+                } else if (data.type === "selected-model" && typeof data.model === "string") {
+                  
+                    const responseModel = data.model as unknown as string
+                  
+                    setResponseSelectModel(responseModel)
+                    
+                } else if (data.type === "reasoning-type" && typeof data.reasoning === "string") {
+                  
+                    const responseReasoning = data.reasoning as string
+                  
+                    setResponseReasoningType(responseReasoning)
+                    
                 } else if (data.type === "cleaned-text" && "text" in data && typeof data.text === "string") {
                   setMessages((prevMessages) => {
                     const newMessages = [...prevMessages]
@@ -280,6 +298,8 @@ export function useAnthropicChat() {
     tokenUsage,
     modelConfig,
     uiModelConfig,
+    responseSelectModel,
+    responseReasoningType,
     updateModelConfig,
   }
 }
